@@ -1,4 +1,5 @@
 let ctx;
+let debug = true;
 
 export async function setup(gameContext) {
     ctx = gameContext
@@ -18,7 +19,6 @@ export async function setup(gameContext) {
         ui.create(displayTicksInHeader({ text: formatTicksForDisplay(getPlayerTicks()) }),
             document.getElementById('header-theme').getElementsByClassName('d-flex align-items-right')[0]);
     });
-
 }
 
 const hour = 1;
@@ -27,26 +27,25 @@ const minute = hour / 60;
 const minuteArray = [5, 15, 30];
 
 function simulateTime(hours) {
-    console.log("Hours: " + hours)
+    // Compute if sufficient ticks are available 
     let ticksToSimulate = TICKS_PER_MINUTE * hours * 60;
-    console.log("Ticks to simulate: " + ticksToSimulate)
     let player_offline_ticks = getPlayerTicks();
-    console.log("Player Offline Ticks: " + player_offline_ticks)
-    // TODO: Testing
-    //player_offline_ticks *= 10;
+    player_offline_ticks *= debug ? 10 : 1; // if in debug, multiply ticks by 10
     if (player_offline_ticks < ticksToSimulate) {
         console.error("Error: Insufficient Ticks " + player_offline_ticks + " < " + ticksToSimulate)
         return; // TODO: Add error reporting somehow
     }
-    if (swal.isVisible()) {
-        swal.close();
-    }
+    // Hide UI if it is visible
+    if (swal.isVisible()) { swal.close(); }
+    // Preform time skip and subtract used ticks
     game.testForOffline(hours);
-    ctx.characterStorage.setItem('offline_ticks', player_offline_ticks - ticksToSimulate)
     game.township.availableGameTicksToSpend += Math.floor((hours * 60) / (game.township.TICK_LENGTH / 60));
     game.township.renderQueue.ticksAvailable = true;
+    ctx.characterStorage.setItem('offline_ticks', player_offline_ticks - ticksToSimulate)
     console.log("Successfully spent " + ticksToSimulate + " ticks "
         + "[" + player_offline_ticks + "->" + getPlayerTicks() + "]")
+    // Update button text to display new correct time
+    document.getElementById("time-skip-display-button").textContent = formatTicksForDisplay(getPlayerTicks());
 }
 
 
@@ -97,10 +96,8 @@ function additionalMinibarPatches() {
             buttonContainer.appendChild(button);
         }
     }
-
     addButtons('m', minuteArray);
     addButtons('h', hourArray);
-
 }
 
 
@@ -113,10 +110,10 @@ function createSettings() {
             let minOrHour;
 
             if (type === 'm') {
-                timeStr = 'Min'// + (time === 1 ? '' : 's');
+                timeStr = 'Min'
                 minOrHour = minute;
             } else {
-                timeStr = 'Hrs'// + (time === 1 ? '' : 's');
+                timeStr = 'Hrs'
                 minOrHour = hour;
             }
 
@@ -135,34 +132,21 @@ function createSettings() {
     ctx.settings.section('Skip').add(buttonArray);
 }
 
-
-function uncapOfflineTime() {
-    ctx.patch(Game, 'getOfflineTimeDiff').replace(function () {
-        let lastSeen = Date.now() - this.tickTimestamp;
-        return {
-            timeDiff: lastSeen,
-            originalTimeDiff: lastSeen
-        };
-    });
-}
-
-
 function interceptOfflineProgress() {
     ctx.patch(Game, 'processOffline').replace((originalMethod, isModCall) => {
         console.log(`Process offline: ${isModCall}`);
-        if (!isModCall) {
-            // Intercept offline time and replace with ticks
+        if (!isModCall) { // Intercept offline time and replace with ticks
             // Modify standard tick length of 50ms based on settings
             //const offline_multiplier = parseFloat(ctx.settings.section('Other').get('offline_multiplier'))
-            const MODIFED_TICK_LENGTH = TICK_INTERVAL * 1.0; //offline_multiplier;
+            const MODIFIED_TICK_LENGTH = TICK_INTERVAL * 1.0; //offline_multiplier;
             // Add new ticks to the total
-            let newTicks = (Date.now() - game.tickTimestamp) / MODIFED_TICK_LENGTH;
+            let newTicks = (Date.now() - game.tickTimestamp) / MODIFIED_TICK_LENGTH;
             ctx.characterStorage.setItem('offline_ticks', getPlayerTicks() + newTicks)
             // Reset 'last seen' to now
             game.tickTimestamp = Date.now();
             console.log("Offline progress intercepted....")
         } else {
-            console.log("Calling origional offline")
+            console.log("Calling original offline")
             originalMethod();
         }
     });
@@ -183,19 +167,19 @@ function interceptOfflineProgress() {
 }
 
 function formatTicksForDisplay(ticks) {
+    // Calculate totals
     const milliseconds = ticks * 50;
     const totalSeconds = parseInt(Math.floor(milliseconds / 1000));
     const totalMinutes = parseInt(Math.floor(totalSeconds / 60));
     const totalHours = parseInt(Math.floor(totalMinutes / 60));
     const days = parseInt(Math.floor(totalHours / 24));
-
+    // Add leading 0s if necessary
     const minutes = (totalMinutes % 60).toString().padStart(2, '0');
     const hours = (totalHours % 24).toString().padStart(2, '0');
-
+    // Time is `hh mm` by default, add `dd` if hours > 24
     let time = `${hours}h ${minutes}m`;
     if (days > 0)
         time = `${days}d ` + time;
-
     return time;
 }
 
@@ -211,7 +195,6 @@ function displayTicksInHeader(props) {
 
 function getPlayerTicks() {
     let ticks = parseInt(ctx.characterStorage.getItem('offline_ticks'));
-    //console.log("Player Ticks Retrieved: " + ticks)
     return (ticks === undefined || isNaN(ticks)) ? 0 : ticks
 }
 
