@@ -1,0 +1,4 @@
+{
+    "setup": "setup.mjs",
+    "load": "TimeDisplay.html"
+}
