@@ -1,5 +1,5 @@
 let ctx;
-let debug = true;
+const DEBUG = true;
 
 export async function setup(gameContext) {
     ctx = gameContext
@@ -28,11 +28,20 @@ const minuteArray = [5, 15, 30];
 
 function simulateTime(hours) {
     // Compute if sufficient ticks are available 
-    let ticksToSimulate = (hours / minute) * (1000 / TICK_INTERVAL);
+    let ticksToSimulate = hours * 60 * TICKS_PER_MINUTE;
     let player_offline_ticks = getPlayerTicks();
-    player_offline_ticks *= debug ? 10 : 1; // if in debug, multiply ticks by 10
+
     if (player_offline_ticks < ticksToSimulate) {
         console.error("Error: Insufficient Ticks " + player_offline_ticks + " < " + ticksToSimulate)
+        
+        // Alert box: Insufficient funds.
+        new Swal;
+        setTimeout(()=>{
+            const text = document.getElementById('swal2-title');
+            text.style.display = 'grid';
+            text.textContent = 'Insufficient offline time.';
+        }, 35)
+
         return; // TODO: Add error reporting somehow
     }
     // Hide UI if it is visible
@@ -44,8 +53,9 @@ function simulateTime(hours) {
     ctx.characterStorage.setItem('offline_ticks', player_offline_ticks - ticksToSimulate)
     console.log("Successfully spent " + ticksToSimulate + " ticks "
         + "[" + player_offline_ticks + "->" + getPlayerTicks() + "]")
-    // Update button text to display new correct time
+    // Update button text and minibar text to display new correct time
     document.getElementById("time-skip-display-button").textContent = formatTicksForDisplay(getPlayerTicks());
+    document.getElementById('octtSmall2').innerText = '\nSpendable: ' + formatTicksForDisplay(getPlayerTicks());
 }
 
 
@@ -70,7 +80,10 @@ function additionalMinibarPatches() {
     const span = hover_timeSkip.appendChild(document.createElement('span'));
     span.className = 'font-size-sm text-center text-white';
     const small = span.appendChild(document.createElement('small'));
-    small.textContent = 'Time Skip';
+    small.textContent = 'Offline spending';
+    const small2 = small.appendChild(document.createElement('small'));
+    small2.id = 'octtSmall2';
+    small2.innerText = '\nSpendable: ' + formatTicksForDisplay(getPlayerTicks());
     const buttonContainer = hover_timeSkip.appendChild(document.createElement('div'));
     document.getElementById('skill-footer-minibar-items-container').parentElement.appendChild(hover_timeSkip);
     buttonContainer.style.display = 'grid';
@@ -186,7 +199,10 @@ function displayTicksInHeader(props) {
         $template: '#time-skip-display',
         ticksAsString: props.text,
         click() {
-            simulateTime(0.8);
+            if(DEBUG){
+                ctx.characterStorage.setItem('offline_ticks', getPlayerTicks()+(TICKS_PER_MINUTE*1440)); // Give a day worth of ticks on press.
+                simulateTime(0);
+            }
         }
     };
 }

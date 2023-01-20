@@ -1,4 +1,5 @@
 {
+    "namespace": "octt",
     "setup": "setup.mjs",
     "load": "TimeDisplay.html"
 }
