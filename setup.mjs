@@ -16,8 +16,10 @@ export async function setup(gameContext) {
     ctx.onInterfaceReady(() => {
         createSettings(); // Settings buttons.
         additionalMinibarPatches(); // Minibar time buttons.
-        ui.create(displayTicksInHeader({ text: formatTicksForDisplay(getPlayerTicks()) }),
+        // Add header button
+        ui.create(createHeaderTicksDisplay({ text: formatTicksForDisplay(getPlayerTicks()) }),
             document.getElementById('header-theme').getElementsByClassName('d-flex align-items-right')[0]);
+        ui.create(createTimeSkipDisplay({ buttonArray: [] }), document.getElementById("time-skip-display-panel"))
     });
 }
 
@@ -33,10 +35,10 @@ function simulateTime(hours) {
 
     if (player_offline_ticks < ticksToSimulate) {
         console.error("Error: Insufficient Ticks " + player_offline_ticks + " < " + ticksToSimulate)
-        
+
         // Alert box: Insufficient funds.
         new Swal;
-        setTimeout(()=>{
+        setTimeout(() => {
             const text = document.getElementById('swal2-title');
             text.style.display = 'grid';
             text.textContent = 'Insufficient offline time.';
@@ -194,16 +196,31 @@ function formatTicksForDisplay(ticks) {
     return time;
 }
 
-function displayTicksInHeader(props) {
+function createHeaderTicksDisplay(props) {
     return {
         $template: '#time-skip-display',
         ticksAsString: props.text,
         click() {
-            if(DEBUG){
-                ctx.characterStorage.setItem('offline_ticks', getPlayerTicks()+(TICKS_PER_MINUTE*1440)); // Give a day worth of ticks on press.
+<<<<<<< HEAD
+            if (DEBUG) {
+                ctx.characterStorage.setItem('offline_ticks', getPlayerTicks() + (TICKS_PER_MINUTE * 1440)); // Give a day worth of ticks on press.
                 simulateTime(0);
             }
+=======
+            let e = document.getElementById("time-skip-menu");
+            if (e.style.display == 'none')
+                e.style.display = 'block';
+            else
+                e.style.display = 'none';
+>>>>>>> f361a42... menu attached to header button
         }
+    };
+}
+
+function createTimeSkipDisplay(props) {
+    return {
+        $template: '#time-skip-menu',
+        timeIncrementsButtonArray: props.buttonArray
     };
 }
 
