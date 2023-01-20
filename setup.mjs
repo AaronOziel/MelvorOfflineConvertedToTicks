@@ -28,7 +28,7 @@ const minuteArray = [5, 15, 30];
 
 function simulateTime(hours) {
     console.log("Hours: " + hours)
-    let ticksToSimulate = (hours / minute) * (1000 / TICK_INTERVAL);
+    let ticksToSimulate = TICKS_PER_MINUTE * hours * 60;
     console.log("Ticks to simulate: " + ticksToSimulate)
     let player_offline_ticks = getPlayerTicks();
     console.log("Player Offline Ticks: " + player_offline_ticks)
@@ -71,7 +71,9 @@ function additionalMinibarPatches() {
     const span = hover_timeSkip.appendChild(document.createElement('span'));
     span.className = 'font-size-sm text-center text-white';
     const small = span.appendChild(document.createElement('small'));
-    small.textContent = 'Time Skip';
+    small.textContent = 'Offline Spending';
+    const small2 = small.appendChild(document.createElement('small'));
+    small2.innerText = '\nSee upper right to view your spendable offline time.';
     const buttonContainer = hover_timeSkip.appendChild(document.createElement('div'));
     document.getElementById('skill-footer-minibar-items-container').parentElement.appendChild(hover_timeSkip);
     buttonContainer.style.display = 'grid';
