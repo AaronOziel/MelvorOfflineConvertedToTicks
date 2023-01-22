@@ -35,18 +35,16 @@ export async function setup(gameContext) {
 }
 
 function simulateTime(hours) {
+    // Stop a time skip if no action is in progress
+    if (game.activeAction === undefined) {
+        displayTimeSkipToast(`No active action, won't skip time while not training`, "danger");
+        return;
+    }
     // Compute if sufficient ticks are available
     let ticksToSimulate = hours * 60 * TICKS_PER_MINUTE;
     let player_offline_ticks = getPlayerTicks();
     if (player_offline_ticks < ticksToSimulate) {
-        // console.error("Error: Insufficient Ticks " + player_offline_ticks + " < " + ticksToSimulate)
-        // Alert box: Insufficient funds.
-        new Swal();
-        setTimeout(() => {
-            const text = document.getElementById("swal2-title");
-            text.style.display = "grid";
-            text.textContent = "Insufficient offline time.";
-        }, 35);
+        displayTimeSkipToast("Insufficient time available to skip that much time.", "danger");
         return;
     }
     // Hide UI if it is visible
@@ -159,7 +157,8 @@ function interceptOfflineProgress() {
             // Reset 'last seen' to now
             // TODO: Not sure if even needed...
             game.tickTimestamp = Date.now();
-            console.log(`Offline progress intercepted, adding ${newTicks} ticks`);
+            displayTimeSkipToast(`Offline time recorded, you were away for ${formatTicksForDisplay(newTicks)}`, "success");
+            console.log(`Offline progress recorded, saving ${newTicks} for later`);
         } else {
             console.log("Calling original offline");
             originalMethod();
@@ -193,7 +192,7 @@ function formatTicksForDisplay(ticks) {
     const hours = (totalHours % 24).toString().padStart(2, "0");
     // Time is `hh mm` by default, add `dd` if hours > 24
     let time = `${hours}h ${minutes}m`;
-    if (days > 0) time = `${days}d ` + time;
+    if (days > 0) time = `${days}d ${time}`;
     return time;
 }
 
@@ -202,12 +201,9 @@ function createHeaderTicksDisplay(props) {
         $template: "#time-skip-display",
         ticksAsString: props.text,
         click() {
-            let e = document.getElementById("time-skip-menu");
-            if (e.style.display == "none") {
-                e.style.display = "block";
-            } else {
-                e.style.display = "none";
-            }
+            let menu = document.getElementById("time-skip-menu");
+            // Invert menu display
+            menu.style.display = menu.style.display == "none" ? "block" : "none";
             if (DEBUG) {
                 ctx.characterStorage.setItem("offline_ticks", getPlayerTicks() + TICKS_PER_MINUTE * Math.floor(Math.random() * 1440)); // Give a (0-1) days worth of ticks on press.
                 //simulateTime(0);
@@ -249,7 +245,25 @@ function createTimeSkipButtonArray() {
 
 function getPlayerTicks() {
     let ticks = parseInt(ctx.characterStorage.getItem("offline_ticks"));
-    return ticks === undefined || isNaN(ticks) ? 0 : ticks;
+    return 100000; //ticks === undefined || isNaN(ticks) ? 0 : ticks;
+}
+
+function displayTimeSkipToast(message, badge = "info", duration = 5000) {
+    /* Badges are:
+    - Info
+    - Success
+    - Warning
+    - Danger
+    - Primary/Secondary?
+    - Light/Dark?
+    */
+    fireBottomToast(
+        `<div class="text-center">
+            <img class="notification-img" src="https://cdn.melvor.net/core/v018/assets/media/skills/astrology/arachi.svg">
+            <span class="badge badge-${badge}">${message}</span>
+        </div>`,
+        duration
+    );
 }
 
 function initializeConfigs() {}
