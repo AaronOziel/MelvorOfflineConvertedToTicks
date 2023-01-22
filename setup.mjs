@@ -1,4 +1,5 @@
 let ctx;
+let settings;
 const DEBUG = true;
 const hour = 1;
 const hourArray = [2, 4, 8, 16];
@@ -9,6 +10,8 @@ const msPerHour = 60 * 60 * 1000;
 export async function setup(gameContext) {
     ctx = gameContext;
 
+    createSettings();
+
     ctx.onCharacterSelectionLoaded(() => {
         patchMinibar(); // Minibar icon.
     });
@@ -18,7 +21,6 @@ export async function setup(gameContext) {
     });
 
     ctx.onInterfaceReady(() => {
-        createSettings();
         additionalMinibarPatches();
         headerMainMenuDisplay();
     });
@@ -42,7 +44,7 @@ function headerMainMenuDisplay() {
 function updateTimeDisplays() {
     const time = formatTimeForDisplay(getPlayerTime());
     document.getElementById("time-skip-display-button").textContent = time;
-    document.getElementById("octtSmall2").innerText = "\nSpendable: " + time;
+    document.getElementById("octtSmall2").innerText = "\nTime: " + time;
 }
 
 function patchMinibar() {
@@ -60,40 +62,26 @@ function additionalMinibarPatches() {
     const hover_timeSkip = document.getElementById("skill-footer-minibar-items-container").cloneNode();
     hover_timeSkip.id = "hover-timeSkip";
     hover_timeSkip.classList.add("d-none");
+    hover_timeSkip.style.maxWidth = "300";
+    document.getElementById("skill-footer-minibar-items-container").parentElement.appendChild(hover_timeSkip);
     const span = hover_timeSkip.appendChild(document.createElement("span"));
     span.className = "font-size-sm text-center text-white";
     const small = span.appendChild(document.createElement("small"));
-    small.textContent = "Offline spending";
+    small.textContent = "Time Skip";
     const small2 = small.appendChild(document.createElement("small"));
     small2.id = "octtSmall2";
-    small2.innerText = "\nSpendable: " + formatTimeForDisplay(getPlayerTime());
-    const buttonContainer = hover_timeSkip.appendChild(document.createElement("div"));
-    document.getElementById("skill-footer-minibar-items-container").parentElement.appendChild(hover_timeSkip);
-    buttonContainer.style.display = "grid";
+    small2.innerText = "\nTime: " + formatTimeForDisplay(getPlayerTime());
+    const buttonContainer = createTimeSkipButtonArray();
     buttonContainer.style.gridTemplateColumns = "repeat(2,1fr)";
     const minibar_timeSkip = document.getElementById("minibar-timeSkip");
     minibar_timeSkip.addEventListener("mouseover", () => hover_timeSkip.classList.remove("d-none"));
-    hover_timeSkip.addEventListener("mouseover", () => hover_timeSkip.classList.remove("d-none"));
     minibar_timeSkip.addEventListener("mouseleave", () => hover_timeSkip.classList.add("d-none"));
-    hover_timeSkip.addEventListener("mouseleave", () => hover_timeSkip.classList.add("d-none"));
-
-    function addButtons(type, arr) {
-        for (const time of arr) {
-            const button = document.createElement("button");
-            button.className = "btn btn-sm btn-outline-secondary overlay-container overlay-bottom skill-icon-sm font-w700 font-size-xs mb-0 text-white";
-            button.style.backgroundColor = "black";
-            button.textContent = time + type;
-            button.style.display = "grid";
-            button.style.justifyContent = "center";
-            const minOrHour = type === "m" ? minute : hour;
-            button.addEventListener("click", () => {
-                simulateTime(time * minOrHour);
-            });
-            buttonContainer.appendChild(button);
-        }
+    if (settings.section("Time skip menu in skill minibar").get("show-mini-bar") == false) {
+        minibar_timeSkip.classList.add("d-none");
     }
-    addButtons("m", minuteArray);
-    addButtons("h", hourArray);
+    hover_timeSkip.addEventListener("mouseover", () => hover_timeSkip.classList.remove("d-none"));
+    hover_timeSkip.addEventListener("mouseleave", () => hover_timeSkip.classList.add("d-none"));
+    hover_timeSkip.appendChild(buttonContainer);
 }
 
 function createHeaderTimeDisplay(props) {
@@ -144,34 +132,55 @@ function createTimeSkipButtonArray() {
 }
 
 function createSettings() {
-    const buttonArray = [];
-
-    function addButtons(type, arr) {
-        for (const time of arr) {
-            let timeStr;
-            let minOrHour;
-
-            if (type === "m") {
-                timeStr = "Min";
-                minOrHour = minute;
+    settings = ctx.settings;
+    settings.section("Time skip menu in skill minibar").add({
+        type: "switch",
+        name: "show-mini-bar",
+        label: "show",
+        hint: "",
+        default: true,
+        onChange: (newValue, oldValue) => {
+            if (newValue) {
+                document.getElementById("minibar-timeSkip").classList.remove("d-none");
             } else {
-                timeStr = "Hrs";
-                minOrHour = hour;
+                document.getElementById("minibar-timeSkip").classList.add("d-none");
             }
+        },
+    });
 
-            buttonArray.push({
-                type: "button",
-                name: `buttonMinute${time}`,
-                display: time + " " + timeStr,
-                onClick: () => {
-                    simulateTime(time * minOrHour);
-                },
-            });
-        }
-    }
-    addButtons("m", minuteArray);
-    addButtons("h", hourArray);
-    ctx.settings.section("Skip").add(buttonArray);
+    settings.section("Offline Time Multiplier").add({
+        type: "number",
+        name: "offline-time-multiplier",
+        label: "Since time skipping is 100% efficient with next to nothing wasted, it may be more realistic to only get some fraction of offline time since it is now more valuable than normal.",
+        hint: "[10 - 0.1]",
+        default: 0.8,
+        min: 0.1,
+        max: 10,
+        onChange: (value, previousValue) => {
+            try {
+                // This whole thing may be unnecessary
+                let multiplier = parseFloat(value).toFixed(2);
+                multiplier = Math.round((multiplier + Number.EPSILON) * 100) / 100;
+                if (multiplier < 0.1 || multiplier > 10) {
+                    displayTimeSkipToast(`"${multiplier}" is not a valid time multiplier [Min = 0.1, Max = 10]`, "danger");
+                    return false;
+                }
+                return true;
+            } catch {
+                displayTimeSkipToast(`"${value}" is not a valid number [Min = 0.1, Max = 10]`, "danger");
+            }
+            7;
+        },
+    });
+
+    settings.section("Maximum Offline Time").add({
+        type: "number",
+        name: "max-offline-time",
+        label: "Maximum number of offline hours that can accumulate.",
+        hint: "[Base game is 24hrs, -1 = infinite]",
+        default: 24,
+        min: -1,
+    });
 }
 
 // FUNCTIONALITY
@@ -208,6 +217,11 @@ function interceptOfflineProgress() {
         if (!isModCall) {
             // Intercept offline time
             let newTime = Date.now() - game.tickTimestamp;
+            if (settings.section("Maximum Offline Time").get("max-offline-time") > 0) {
+                // cap offline time if set
+                newTime = Math.min(newTime, settings.section("Maximum Offline Time").get("max-offline-time") * msPerHour);
+            }
+            newTime *= settings.section("Offline Time Multiplier").get("offline-time-multiplier");
             ctx.characterStorage.setItem("offline_time", getPlayerTime() + newTime);
             // Reset 'last seen' to now
             // TODO: Not sure if even needed...
@@ -255,12 +269,13 @@ function getPlayerTime() {
 
 function displayTimeSkipToast(message, badge = "info", duration = 5000) {
     /* Badges are:
-    - Info
-    - Success
-    - Warning
-    - Danger
-    - Primary/Secondary?
-    - Light/Dark?
+        - primary: blue
+        - secondary: grey
+        - success: green
+        - info: light blue
+        - warning: yellow
+        - danger: red
+        - dark: dark grey
     */
     fireBottomToast(
         `<div class="text-center">
