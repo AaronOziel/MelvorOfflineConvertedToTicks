@@ -1,6 +1,21 @@
 <!-- templates.html -->
 <template id="time-skip-display">
-    <div class="d-flex align-items-right">
-        <button id="time-skip-display-button" class="btn btn-primary font-size-sm mr-2 ml-2" @click="click">{{ ticksAsString }}</button>
+    <div class="d-flex align-items-right" id="time-skip-display-panel">
+        <button id="time-skip-display-button" class="btn btn-primary font-size-sm mr-2 ml-2" @click="click">{{
+            ticksAsString }}</button>
+        {{ time-skip-menu-goes-here }}
+        <!--maybe?-->
+    </div>
+</template>
+
+<template id="time-skip-menu">
+    <div class="dropdown-menu dropdown-menu-right p-0 border-0 font-size-sm show" id="time-skip-menu"
+        aria-labelledby="page-header-user-dropdown"
+        style="min-width: 325px; position: absolute; transform: translate3d(-197px, 0px, 0px); will-change: transform;"
+        x-placement="bottom-end">
+        <div class="p-2">
+            <h5 class="dropdown-header dropdown-melvor-cloud">Time Skip</h5>
+            <div role="separator" class="dropdown-divider"></div>
+        </div>
     </div>
 </template>
