@@ -8,7 +8,7 @@ const msPerHour = 60 * 60 * 1000;
 
 export async function setup(gameContext) {
     ctx = gameContext;
-    
+
     ctx.onCharacterSelectionLoaded(() => {
         patchMinibar(); // Minibar icon.
     });
@@ -24,6 +24,8 @@ export async function setup(gameContext) {
     });
 }
 
+// CREATE UI ELEMENTS
+
 function headerMainMenuDisplay() {
     ui.create(
         createHeaderTimeDisplay({ text: formatTimeForDisplay(getPlayerTime()) }),
@@ -35,32 +37,6 @@ function headerMainMenuDisplay() {
     menu.style.display = "none";
     menu.addEventListener("mouseleave", () => (menu.style.display = "none"));
     document.getElementById("time-skip-display-button").style.fontFamily = "Fira Mono";
-}
-
-function simulateTime(hours) {
-    // Stop a time skip if no action is in progress
-    if (game.activeAction === undefined) {
-        displayTimeSkipToast(`No active action, won't skip time while not training`, "danger");
-        return;
-    }
-    // Compute if sufficient time is available
-    let timeToSimulate = hours * msPerHour;
-    let player_offline_time = getPlayerTime();
-    if (player_offline_time < timeToSimulate) {
-        displayTimeSkipToast("Insufficient time available to skip that much time.", "danger");
-        return;
-    }
-    // Hide UI if it is visible
-    if (swal.isVisible()) swal.close();
-    document.getElementById("time-skip-menu").style.display = "none";
-    // Preform time skip and subtract used time
-    game.testForOffline(hours);
-    game.township.availableGameTicksToSpend += Math.floor((hours * 60) / (game.township.TICK_LENGTH / 60));
-    game.township.renderQueue.ticksAvailable = true;
-    ctx.characterStorage.setItem("offline_time", player_offline_time - timeToSimulate);
-    console.log(`Successfully spent ${timeToSimulate} time [${player_offline_time} -> ${getPlayerTime()}]`);
-    // Update button text and minibar text to display new correct time
-    updateTimeDisplays();
 }
 
 function updateTimeDisplays() {
@@ -120,6 +96,53 @@ function additionalMinibarPatches() {
     addButtons("h", hourArray);
 }
 
+function createHeaderTimeDisplay(props) {
+    return {
+        $template: "#time-skip-display",
+        timeAsString: props.text,
+        click() {
+            let menu = document.getElementById("time-skip-menu");
+            // Invert menu display
+            menu.style.display = menu.style.display == "none" ? "block" : "none";
+            if (DEBUG) {
+                ctx.characterStorage.setItem("offline_time", getPlayerTime() + Math.floor(Math.random() * msPerHour * 24)); // Give a (0-1) days worth of time on press.
+                updateTimeDisplays();
+            }
+        },
+    };
+}
+
+function createTimeSkipDisplay(props) {
+    return {
+        $template: "#time-skip-menu",
+    };
+}
+
+function createTimeSkipButtonArray() {
+    const buttonContainer = document.createElement("div");
+    buttonContainer.style.display = "grid";
+    buttonContainer.style.gridTemplateColumns = "repeat(4,1fr)";
+    buttonContainer.style.margin = "0px 0px 10px 10px";
+    function addButtons(type, arr) {
+        for (const time of arr) {
+            const button = document.createElement("button");
+            button.className = "btn btn-sm btn-outline-secondary overlay-container overlay-bottom skill-icon-sm font-w700 font-size-xs mb-0 text-white";
+            button.style.backgroundColor = "black";
+            button.textContent = time + type;
+            button.style.display = "grid";
+            button.style.justifyContent = "center";
+            const minOrHour = type === "m" ? minute : hour;
+            button.addEventListener("click", () => {
+                simulateTime(time * minOrHour);
+            });
+            buttonContainer.appendChild(button);
+        }
+    }
+    addButtons("m", minuteArray);
+    addButtons("h", hourArray);
+    return buttonContainer;
+}
+
 function createSettings() {
     const buttonArray = [];
 
@@ -149,6 +172,34 @@ function createSettings() {
     addButtons("m", minuteArray);
     addButtons("h", hourArray);
     ctx.settings.section("Skip").add(buttonArray);
+}
+
+// FUNCTIONALITY
+
+function simulateTime(hours) {
+    // Stop a time skip if no action is in progress
+    if (game.activeAction === undefined) {
+        displayTimeSkipToast(`No active action, won't skip time while not training`, "danger");
+        return;
+    }
+    // Compute if sufficient time is available
+    let timeToSimulate = hours * msPerHour;
+    let player_offline_time = getPlayerTime();
+    if (player_offline_time < timeToSimulate) {
+        displayTimeSkipToast("Insufficient time available to skip that much time.", "danger");
+        return;
+    }
+    // Hide UI if it is visible
+    if (swal.isVisible()) swal.close();
+    document.getElementById("time-skip-menu").style.display = "none";
+    // Preform time skip and subtract used time
+    game.testForOffline(hours);
+    game.township.availableGameTicksToSpend += Math.floor((hours * 60) / (game.township.TICK_LENGTH / 60));
+    game.township.renderQueue.ticksAvailable = true;
+    ctx.characterStorage.setItem("offline_time", player_offline_time - timeToSimulate);
+    console.log(`Successfully spent ${timeToSimulate} time [${player_offline_time} -> ${getPlayerTime()}]`);
+    // Update button text and minibar text to display new correct time
+    updateTimeDisplays();
 }
 
 function interceptOfflineProgress() {
@@ -197,53 +248,6 @@ function formatTimeForDisplay(time) {
     return timeDisplayString;
 }
 
-function createHeaderTimeDisplay(props) {
-    return {
-        $template: "#time-skip-display",
-        timeAsString: props.text,
-        click() {
-            let menu = document.getElementById("time-skip-menu");
-            // Invert menu display
-            menu.style.display = menu.style.display == "none" ? "block" : "none";
-            if (DEBUG) {
-                ctx.characterStorage.setItem("offline_time", getPlayerTime() + Math.floor(Math.random() * msPerHour * 24)); // Give a (0-1) days worth of time on press.
-                updateTimeDisplays();
-            }
-        },
-    };
-}
-
-function createTimeSkipDisplay(props) {
-    return {
-        $template: "#time-skip-menu",
-    };
-}
-
-function createTimeSkipButtonArray() {
-    const buttonContainer = document.createElement("div");
-    buttonContainer.style.display = "grid";
-    buttonContainer.style.gridTemplateColumns = "repeat(4,1fr)";
-    buttonContainer.style.margin = "0px 0px 10px 10px";
-    function addButtons(type, arr) {
-        for (const time of arr) {
-            const button = document.createElement("button");
-            button.className = "btn btn-sm btn-outline-secondary overlay-container overlay-bottom skill-icon-sm font-w700 font-size-xs mb-0 text-white";
-            button.style.backgroundColor = "black";
-            button.textContent = time + type;
-            button.style.display = "grid";
-            button.style.justifyContent = "center";
-            const minOrHour = type === "m" ? minute : hour;
-            button.addEventListener("click", () => {
-                simulateTime(time * minOrHour);
-            });
-            buttonContainer.appendChild(button);
-        }
-    }
-    addButtons("m", minuteArray);
-    addButtons("h", hourArray);
-    return buttonContainer;
-}
-
 function getPlayerTime() {
     let time = parseInt(ctx.characterStorage.getItem("offline_time"));
     return time === undefined || isNaN(time) ? 0 : time;
@@ -266,5 +270,3 @@ function displayTimeSkipToast(message, badge = "info", duration = 5000) {
         duration
     );
 }
-
-function initializeConfigs() {}
