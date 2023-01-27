@@ -1,6 +1,8 @@
+const DEBUG = true;
+const OPTIONAL = true;
+
 let ctx;
 let settings;
-const DEBUG = true;
 const hour = 1;
 const hourArray = [2, 4, 8, 16];
 const minute = hour / 60;
@@ -9,11 +11,13 @@ const msPerHour = 60 * 60 * 1000;
 
 export async function setup(gameContext) {
     ctx = gameContext;
-
     createSettings();
+    
+    // Startup prompt options & functionality.
+    if(OPTIONAL) optionalFlow(ctx);
 
     ctx.onCharacterSelectionLoaded(() => {
-        patchMinibar(); // Minibar icon.
+        patchMinibar();
     });
 
     ctx.onCharacterLoaded(() => {
@@ -284,4 +288,11 @@ function displayTimeSkipToast(message, badge = "info", duration = 5000) {
         </div>`,
         duration
     );
+}
+
+async function optionalFlow(gameContext) {
+    const { modifySettings, startupBehavior } = await gameContext.loadModule('optional.mjs');
+    modifySettings(gameContext);
+    const behavior = startupBehavior(gameContext);
+    if(behavior === 'vanilla') interceptOfflineProgress = ()=>{if(DEBUG) console.log("Interception disabled.")};
 }
