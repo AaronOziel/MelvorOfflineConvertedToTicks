@@ -1,6 +1,6 @@
 let ctx;
 let settings;
-const DEBUG = true;
+const DEBUG = false;
 const hour = 1;
 const hourArray = [2, 4, 8, 16];
 const minute = hour / 60;
@@ -44,7 +44,7 @@ function headerMainMenuDisplay() {
 function updateTimeDisplays() {
     const time = formatTimeForDisplay(getPlayerTime());
     document.getElementById("time-skip-display-button").textContent = time;
-    document.getElementById("octtSmall2").innerText = "\nTime: " + time;
+    document.getElementById("bankOfflineTimeSmall2").innerText = "\nTime: " + time;
 }
 
 function patchMinibar() {
@@ -69,7 +69,7 @@ function additionalMinibarPatches() {
     const small = span.appendChild(document.createElement("small"));
     small.textContent = "Time Skip";
     const small2 = small.appendChild(document.createElement("small"));
-    small2.id = "octtSmall2";
+    small2.id = "bankOfflineTimeSmall2";
     small2.innerText = "\nTime: " + formatTimeForDisplay(getPlayerTime());
     const buttonContainer = createTimeSkipButtonArray();
     buttonContainer.style.gridTemplateColumns = "repeat(2,1fr)";
@@ -153,7 +153,7 @@ function createSettings() {
         name: "offline-time-multiplier",
         label: "Since time skipping is 100% efficient with next to nothing wasted, it may be more realistic to only get some fraction of offline time since it is now more valuable than normal.",
         hint: "[10 - 0.1]",
-        default: 0.8,
+        default: 1,
         min: 0.1,
         max: 10,
         onChange: (value, previousValue) => {
@@ -178,9 +178,127 @@ function createSettings() {
         name: "max-offline-time",
         label: "Maximum number of offline hours that can accumulate.",
         hint: "[Base game is 24hrs, -1 = infinite]",
-        default: 24,
+        default: -1,
         min: -1,
     });
+
+    // Slider
+    const numberName = "timeSkipRangeNumberInput";
+    const sliderName = "timeSkipRangeSliderInput";
+
+    settings.type("slider", {
+        render: renderOfflineRatioSettingsSlider,
+        get: (root) => {
+            try {
+                return document.getElementById(sliderName).value;
+            } catch {
+                return 7;
+            }
+        },
+        set: (root, value) => {
+            try {
+                document.getElementById(numberName).value = value;
+                document.getElementById(sliderName).value = value;
+            } catch {
+                console.log("Oops... " + value);
+            }
+        },
+    });
+
+    settings.section("Offline Time Ratio").add({
+        type: "slider",
+        name: "offlineTimeRatioSlider",
+        default: "100",
+        numberName: numberName,
+        sliderName: sliderName,
+    });
+}
+
+// I think I am gonna ignore all params, but want the signature to match the docs
+function renderOfflineRatioSettingsSlider(name, onChange, config) {
+    let whitespace = "    "; // a tab
+    let value;
+    try {
+        value = parseInt(settings.section("Offline Time Ratio").get("offlineTimeRatioSlider"));
+    } catch {
+        value = config.default;
+    }
+
+    // Typing Input
+    const numberInput = document.createElement("input");
+    numberInput.id = config.numberName;
+    numberInput.type = "number";
+    numberInput.name = config.numberName;
+    numberInput.value = value;
+    numberInput.className = "form-control form-control-lg";
+
+    const labelBase = document.createElement("label");
+    labelBase.for = config.numberName;
+    labelBase.textContent = "Percent of time banked for later instead:" + whitespace;
+
+    if (config.hint) {
+        const hint = document.createElement("small");
+        hint.textContent = config.hint;
+        labelBase.appendChild(hint);
+    }
+
+    // Slider Input
+    const range = document.createElement("div");
+    range.className = "timeSkipRangeRow";
+
+    const labelRangeBase = document.createElement("label");
+    labelRangeBase.textContent = "Base";
+    labelRangeBase.id = "timeSkipRangeRowEdge";
+
+    labelRangeBase.style.minWidth = "10";
+    labelRangeBase.style.display = "flex";
+    labelRangeBase.style.justifyContent = "center";
+    labelRangeBase.style.alignContent = "center";
+
+    const sliderInput = document.createElement("input");
+    sliderInput.id = config.sliderName;
+    sliderInput.type = "range";
+    sliderInput.min = 0;
+    sliderInput.max = 100;
+    sliderInput.value = value;
+    sliderInput.className = "slider";
+    //sliderInput.style.width = "75%";
+    sliderInput.classList.add("timeSkipRangeRowSlider");
+    sliderInput.style.padding = 25;
+
+    const labelRangeModded = document.createElement("label");
+    labelRangeModded.textContent = "Banked";
+    labelRangeModded.id = "timeSkipRangeRowEdge";
+
+    labelRangeModded.style.minWidth = "10";
+    labelRangeModded.style.display = "flex";
+    labelRangeModded.style.justifyContent = "center";
+    labelRangeModded.style.alignContent = "center";
+
+    range.append(...[labelRangeBase, sliderInput, labelRangeModded]);
+
+    function numberOnChange() {
+        let value = document.getElementById(config.numberName).value;
+        value = Math.min(Math.max(value, 0), 100);
+        document.getElementById(config.sliderName).value = value;
+        document.getElementById(config.numberName).value = value;
+    }
+    function sliderOnChange() {
+        let value = document.getElementById(config.sliderName).value;
+        value = Math.min(Math.max(value, 0), 100);
+        document.getElementById(config.sliderName).value = value;
+        document.getElementById(config.numberName).value = value;
+    }
+
+    numberInput.addEventListener("change", numberOnChange);
+    sliderInput.addEventListener("change", sliderOnChange);
+
+    const root = document.createElement("div");
+    root.append(...[labelBase, numberInput, range]);
+    //root.appendChild(labelBase);
+    //root.appendChild(numberInput);
+    //root.appendChild(range);
+    return root;
 }
 
 // FUNCTIONALITY

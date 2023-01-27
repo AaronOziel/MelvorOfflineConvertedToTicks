@@ -1,5 +1,8 @@
 {
-    "namespace": "octt",
+    "namespace": "bankOfflineTime",
     "setup": "setup.mjs",
-    "load": "TimeDisplay.html"
+    "load": [ 
+        "TimeDisplay.html",
+        "BankOfflineTime.css"
+    ]
 }
