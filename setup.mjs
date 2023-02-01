@@ -1,6 +1,6 @@
 let ctx;
 let settings;
-const DEBUG = false;
+const DEBUG = true;
 const hour = 1;
 const hourArray = [2, 4, 8, 16];
 const minute = hour / 60;
@@ -30,7 +30,9 @@ export async function setup(gameContext) {
 
 function headerMainMenuDisplay() {
     ui.create(
-        createHeaderTimeDisplay({ text: formatTimeForDisplay(getPlayerTime()) }),
+        createHeaderTimeDisplay({
+            text: formatTimeForDisplay(getPlayerTime()),
+        }),
         document.getElementById("header-theme").getElementsByClassName("d-flex align-items-right")[0]
     );
     ui.create(createTimeSkipDisplay(), document.getElementById("time-skip-display-panel"));
@@ -42,9 +44,12 @@ function headerMainMenuDisplay() {
 }
 
 function updateTimeDisplays() {
-    const time = formatTimeForDisplay(getPlayerTime());
-    document.getElementById("time-skip-display-button").textContent = time;
-    document.getElementById("bankOfflineTimeSmall2").innerText = "\nTime: " + time;
+    const formattedTimeString = formatTimeForDisplay(getPlayerTime());
+    try {
+        // These may not exist yet
+        document.getElementById("time-skip-display-button").textContent = formattedTimeString;
+        document.getElementById("bankOfflineTimeSmall2").innerText = "\nTime: " + formattedTimeString;
+    } catch {}
 }
 
 function patchMinibar() {
@@ -153,7 +158,7 @@ function createSettings() {
         name: "offline-time-multiplier",
         label: "Since time skipping is 100% efficient with next to nothing wasted, it may be more realistic to only get some fraction of offline time since it is now more valuable than normal.",
         hint: "[10 - 0.1]",
-        default: 1,
+        default: 0.8,
         min: 0.1,
         max: 10,
         onChange: (value, previousValue) => {
@@ -178,7 +183,7 @@ function createSettings() {
         name: "max-offline-time",
         label: "Maximum number of offline hours that can accumulate.",
         hint: "[Base game is 24hrs, -1 = infinite]",
-        default: -1,
+        default: 24,
         min: -1,
     });
 
@@ -190,18 +195,14 @@ function createSettings() {
         render: renderOfflineRatioSettingsSlider,
         get: (root) => {
             try {
-                return document.getElementById(sliderName).value;
-            } catch {
-                return 7;
-            }
+                return root.querySelector(sliderName).value;
+            } catch {}
         },
         set: (root, value) => {
             try {
-                document.getElementById(numberName).value = value;
-                document.getElementById(sliderName).value = value;
-            } catch {
-                console.log("Oops... " + value);
-            }
+                root.querySelector(numberName).value = value;
+                root.querySelector(sliderName).value = value;
+            } catch {}
         },
     });
 
@@ -215,8 +216,8 @@ function createSettings() {
 }
 
 // I think I am gonna ignore all params, but want the signature to match the docs
+// Someday I dream of this: https://codepen.io/vsync/pen/mdEJMLv
 function renderOfflineRatioSettingsSlider(name, onChange, config) {
-    let whitespace = "    "; // a tab
     let value;
     try {
         value = parseInt(settings.section("Offline Time Ratio").get("offlineTimeRatioSlider"));
@@ -234,7 +235,7 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
 
     const labelBase = document.createElement("label");
     labelBase.for = config.numberName;
-    labelBase.textContent = "Percent of time banked for later instead:" + whitespace;
+    labelBase.textContent = "Percent of time banked for later instead:";
 
     if (config.hint) {
         const hint = document.createElement("small");
@@ -262,7 +263,6 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
     sliderInput.max = 100;
     sliderInput.value = value;
     sliderInput.className = "slider";
-    //sliderInput.style.width = "75%";
     sliderInput.classList.add("timeSkipRangeRowSlider");
     sliderInput.style.padding = 25;
 
@@ -283,6 +283,7 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
         document.getElementById(config.sliderName).value = value;
         document.getElementById(config.numberName).value = value;
     }
+
     function sliderOnChange() {
         let value = document.getElementById(config.sliderName).value;
         value = Math.min(Math.max(value, 0), 100);
@@ -295,9 +296,6 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
 
     const root = document.createElement("div");
     root.append(...[labelBase, numberInput, range]);
-    //root.appendChild(labelBase);
-    //root.appendChild(numberInput);
-    //root.appendChild(range);
     return root;
 }
 
@@ -314,7 +312,8 @@ function simulateTime(hours) {
     let player_offline_time = getPlayerTime();
     if (player_offline_time < timeToSimulate) {
         displayTimeSkipToast("Insufficient time available to skip that much time.", "danger");
-        return;
+        //return;
+        player_offline_time += timeToSimulate;
     }
     // Hide UI if it is visible
     if (swal.isVisible()) swal.close();
@@ -331,7 +330,6 @@ function simulateTime(hours) {
 
 function interceptOfflineProgress() {
     ctx.patch(Game, "processOffline").replace((originalMethod, isModCall) => {
-        console.log(`Process offline: ${isModCall}`);
         if (!isModCall) {
             // Intercept offline time
             let newTime = Date.now() - game.tickTimestamp;
@@ -340,11 +338,30 @@ function interceptOfflineProgress() {
                 newTime = Math.min(newTime, settings.section("Maximum Offline Time").get("max-offline-time") * msPerHour);
             }
             newTime *= settings.section("Offline Time Multiplier").get("offline-time-multiplier");
-            ctx.characterStorage.setItem("offline_time", getPlayerTime() + newTime);
+            if (DEBUG) newTime += msPerHour;
+            // Split offline time into two behaviors
+            // baseOfflineTime - Behaves just like the base game giving progress
+            // bankOfflineTime - Saves the time into the bank instead and gives no progress
+            let timeRatio = parseInt(settings.section("Offline Time Ratio").get("offlineTimeRatioSlider")) / 100;
+            let bankOfflineTime = newTime * timeRatio;
+            let baseOfflineTime = newTime - bankOfflineTime;
+            /*console.log(
+                `Bank Time  [${bankOfflineTime}] +
+                Away Gains  [${baseOfflineTime}]
+                =========
+                ${bankOfflineTime + baseOfflineTime}
+                ${newTime} (x${timeRatio})`
+            );*/
             // Reset 'last seen' to now
             // TODO: Not sure if even needed...
             game.tickTimestamp = Date.now();
-            displayTimeSkipToast(`Away for ${formatTimeForDisplay(newTime)}, time recorded`, "success");
+            // Bank all time
+            ctx.characterStorage.setItem("offline_time", getPlayerTime() + newTime);
+            // Then spend some of it as normal if Offline Time Ratio > 1
+            if (baseOfflineTime > TICK_INTERVAL) {
+                simulateTime(baseOfflineTime / msPerHour);
+            }
+            displayTimeSkipToast(`Away for ${formatTimeForDisplay(bankOfflineTime)}, time recorded`, "success");
         } else {
             originalMethod();
         }
@@ -355,8 +372,8 @@ function interceptOfflineProgress() {
         // Everything from the original testForOffline().
         return __awaiter(game, void 0, void 0, function* () {
             game.stopMainLoop();
-            console.log("Going back in time - " + timeToGoBack);
-            game.tickTimestamp -= timeToGoBack * msPerHour;
+            game.tickTimestamp -= parseInt(timeToGoBack * msPerHour);
+            //console.log("Going back in time - " + timeToGoBack);
             saveData("all");
             // Except that processOffline() is passed true.
             yield game.processOffline(true);
@@ -366,6 +383,10 @@ function interceptOfflineProgress() {
 }
 
 function formatTimeForDisplay(time) {
+    if (!time) {
+        console.log("Falsey time found");
+        return "00h 00m";
+    }
     // Calculate totals
     const totalSeconds = parseInt(Math.floor(time / 1000));
     const totalMinutes = parseInt(Math.floor(totalSeconds / 60));
@@ -381,8 +402,8 @@ function formatTimeForDisplay(time) {
 }
 
 function getPlayerTime() {
-    let time = parseInt(ctx.characterStorage.getItem("offline_time"));
-    return time === undefined || isNaN(time) ? 0 : time;
+    let playersStoredTime = parseInt(ctx.characterStorage.getItem("offline_time"));
+    return ~~playersStoredTime; // turns NaN and undefined into '0'
 }
 
 function displayTimeSkipToast(message, badge = "info", duration = 5000) {
