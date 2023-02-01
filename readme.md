@@ -18,19 +18,23 @@ Offline Time Bank also has an entry in the skilling minibar that allows you the 
 
 ## Configurable
 
-###**Mini-Bar**
+### **Mini-Bar**
+
 If you do not use the minibar or think it takes up too much space, you can turn it off or on at will
 [Default = True]
 
-###**Offline Time Multiplier**
+### **Offline Time Multiplier**
+
 All offline time banked will first be multiplied by this number. Since spending time increments for only exactly as much time is needed for any given task is nearly perfectly optimal, it may be fair to accrue offline time at a reduced rate since that time is more valuable and better spent in increments.
 [Default = 0.8]
 
-###**Maximum Offline Time**
+### **Maximum Offline Time**
+
 How much offline time can accrue while away. Base game has 24hr limit. For unlimited offline time set to -1.
 [Default = 24]
 
-###**Offline Time Ratio**
+### **Offline Time Ratio**
+
 Allows you to split your offline time between banking with the mod and using normal base game behavior. The value indicates what % of your offline time will be banked for later. The rest of the time is awarded just like the base game as well as not being subject to the Offline Time Multiplier setting.
 Example: Base configs with Offline Time Ratio at 60%, then 60% of your away time will be withheld and banked with the time multiplier applied. 24hrs away = 9h 36m (24h \* 0.4) normal afk reward and 14h 31m (24 \* 0.6 \* 0.8) time banked. **Warning:** offline time that is not banked is will still be subject to the 24hrs offline maximum from the base game. Even if "Maximum Offline Time" is set to -1 (infinite).
 [Default = 100%]
