@@ -323,7 +323,7 @@ function simulateTime(hours) {
     game.township.availableGameTicksToSpend += Math.floor((hours * 60) / (game.township.TICK_LENGTH / 60));
     game.township.renderQueue.ticksAvailable = true;
     ctx.characterStorage.setItem("offline_time", player_offline_time - timeToSimulate);
-    console.log(`Successfully spent ${timeToSimulate} time [${player_offline_time} -> ${getPlayerTime()}]`);
+    if (DEBUG) console.log(`Successfully spent ${timeToSimulate} time [${player_offline_time} -> ${getPlayerTime()}]`);
     // Update button text and minibar text to display new correct time
     updateTimeDisplays();
 }
@@ -345,13 +345,6 @@ function interceptOfflineProgress() {
             let timeRatio = parseInt(settings.section("Offline Time Ratio").get("offlineTimeRatioSlider")) / 100;
             let bankOfflineTime = newTime * timeRatio;
             let baseOfflineTime = newTime - bankOfflineTime;
-            /*console.log(
-                `Bank Time  [${bankOfflineTime}] +
-                Away Gains  [${baseOfflineTime}]
-                =========
-                ${bankOfflineTime + baseOfflineTime}
-                ${newTime} (x${timeRatio})`
-            );*/
             // Reset 'last seen' to now
             // TODO: Not sure if even needed...
             game.tickTimestamp = Date.now();
@@ -368,12 +361,11 @@ function interceptOfflineProgress() {
     });
 
     // Help processOffline differentiate between time skip call and offline progress call.
-    ctx.patch(Game, "testForOffline").replace((originalMethod, timeToGoBack) => {
+    ctx.patch(Game, "testForOffline").replace((originalMethod, hours) => {
         // Everything from the original testForOffline().
         return __awaiter(game, void 0, void 0, function* () {
             game.stopMainLoop();
-            game.tickTimestamp -= parseInt(timeToGoBack * msPerHour);
-            //console.log("Going back in time - " + timeToGoBack);
+            game.tickTimestamp -= parseInt(hours * msPerHour);
             saveData("all");
             // Except that processOffline() is passed true.
             yield game.processOffline(true);
@@ -384,7 +376,6 @@ function interceptOfflineProgress() {
 
 function formatTimeForDisplay(time) {
     if (!time) {
-        console.log("Falsey time found");
         return "00h 00m";
     }
     // Calculate totals
@@ -402,8 +393,7 @@ function formatTimeForDisplay(time) {
 }
 
 function getPlayerTime() {
-    let playersStoredTime = parseInt(ctx.characterStorage.getItem("offline_time"));
-    return ~~playersStoredTime; // turns NaN and undefined into '0'
+    return ~~parseInt(ctx.characterStorage.getItem("offline_time")); // turns NaN and undefined into '0'
 }
 
 function displayTimeSkipToast(message, badge = "info", duration = 5000) {
