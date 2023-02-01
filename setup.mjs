@@ -1,6 +1,6 @@
 let ctx;
 let settings;
-const DEBUG = true;
+const DEBUG = false;
 const hour = 1;
 const hourArray = [2, 4, 8, 16];
 const minute = hour / 60;
@@ -48,7 +48,7 @@ function updateTimeDisplays() {
     try {
         // These may not exist yet
         document.getElementById("time-skip-display-button").textContent = formattedTimeString;
-        document.getElementById("bankOfflineTimeSmall2").innerText = "\nTime: " + formattedTimeString;
+        document.getElementById("offlineTimeBankSmall2").innerText = "\nTime: " + formattedTimeString;
     } catch {}
 }
 
@@ -67,14 +67,14 @@ function additionalMinibarPatches() {
     const hover_timeSkip = document.getElementById("skill-footer-minibar-items-container").cloneNode();
     hover_timeSkip.id = "hover-timeSkip";
     hover_timeSkip.classList.add("d-none");
-    hover_timeSkip.style.maxWidth = "300";
+    hover_timeSkip.style.minWidth = "200px";
     document.getElementById("skill-footer-minibar-items-container").parentElement.appendChild(hover_timeSkip);
     const span = hover_timeSkip.appendChild(document.createElement("span"));
     span.className = "font-size-sm text-center text-white";
     const small = span.appendChild(document.createElement("small"));
     small.textContent = "Time Skip";
     const small2 = small.appendChild(document.createElement("small"));
-    small2.id = "bankOfflineTimeSmall2";
+    small2.id = "offlineTimeBankSmall2";
     small2.innerText = "\nTime: " + formatTimeForDisplay(getPlayerTime());
     const buttonContainer = createTimeSkipButtonArray();
     buttonContainer.style.gridTemplateColumns = "repeat(2,1fr)";
@@ -98,7 +98,7 @@ function createHeaderTimeDisplay(props) {
             // Invert menu display
             menu.style.display = menu.style.display == "none" ? "block" : "none";
             if (DEBUG) {
-                ctx.characterStorage.setItem("offline_time", getPlayerTime() + Math.floor(Math.random() * msPerHour * 24)); // Give a (0-1) days worth of time on press.
+                ctx.characterStorage.setItem("offline_time", getPlayerTime() + Math.floor(Math.random() * msPerHour * 96)); // Give a (0-4) days worth of time on press.
                 updateTimeDisplays();
             }
         },
@@ -115,14 +115,14 @@ function createTimeSkipButtonArray() {
     const buttonContainer = document.createElement("div");
     buttonContainer.style.display = "grid";
     buttonContainer.style.gridTemplateColumns = "repeat(4,1fr)";
-    buttonContainer.style.margin = "0px 0px 10px 10px";
     function addButtons(type, arr) {
         for (const time of arr) {
             const button = document.createElement("button");
-            button.className = "btn btn-sm btn-outline-secondary overlay-container overlay-bottom skill-icon-sm font-w700 font-size-xs mb-0 text-white";
+            button.className = "btn btn-lg btn-alt-info text-white";
             button.style.backgroundColor = "black";
             button.textContent = time + type;
             button.style.display = "grid";
+            button.style.margin = "5px";
             button.style.justifyContent = "center";
             const minOrHour = type === "m" ? minute : hour;
             button.addEventListener("click", () => {
@@ -209,7 +209,7 @@ function createSettings() {
     settings.section("Offline Time Ratio").add({
         type: "slider",
         name: "offlineTimeRatioSlider",
-        default: "100",
+        default: 100,
         numberName: numberName,
         sliderName: sliderName,
     });
@@ -310,7 +310,7 @@ function simulateTime(hours) {
     // Compute if sufficient time is available
     let timeToSimulate = hours * msPerHour;
     let player_offline_time = getPlayerTime();
-    if (player_offline_time < timeToSimulate) {
+    if (player_offline_time < timeToSimulate && DEBUG == false) {
         displayTimeSkipToast("Insufficient time available to skip that much time.", "danger");
         return;
     }
@@ -321,7 +321,7 @@ function simulateTime(hours) {
     game.testForOffline(hours);
     game.township.availableGameTicksToSpend += Math.floor((hours * 60) / (game.township.TICK_LENGTH / 60));
     game.township.renderQueue.ticksAvailable = true;
-    ctx.characterStorage.setItem("offline_time", player_offline_time - timeToSimulate);
+    ctx.characterStorage.setItem("offline_time", Math.max(player_offline_time - timeToSimulate, 0));
     if (DEBUG) console.log(`Successfully spent ${timeToSimulate} time [${player_offline_time} -> ${getPlayerTime()}]`);
     // Update button text and minibar text to display new correct time
     updateTimeDisplays();
@@ -337,13 +337,13 @@ function interceptOfflineProgress() {
                 newTime = Math.min(newTime, settings.section("Maximum Offline Time").get("max-offline-time") * msPerHour);
             }
             newTime *= settings.section("Offline Time Multiplier").get("offline-time-multiplier");
-            if (DEBUG) newTime += msPerHour;
+            if (DEBUG) newTime += msPerHour * 20 * Math.random();
             // Split offline time into two behaviors
             // baseOfflineTime - Behaves just like the base game giving progress
-            // bankOfflineTime - Saves the time into the bank instead and gives no progress
+            // offlineTimeBank - Saves the time into the bank instead and gives no progress
             let timeRatio = parseInt(settings.section("Offline Time Ratio").get("offlineTimeRatioSlider")) / 100;
-            let bankOfflineTime = newTime * timeRatio;
-            let baseOfflineTime = newTime - bankOfflineTime;
+            let offlineTimeBank = newTime * timeRatio;
+            let baseOfflineTime = newTime - offlineTimeBank;
             // Reset 'last seen' to now
             // TODO: Not sure if even needed...
             game.tickTimestamp = Date.now();
@@ -353,8 +353,9 @@ function interceptOfflineProgress() {
             if (baseOfflineTime > TICK_INTERVAL) {
                 simulateTime(baseOfflineTime / msPerHour);
             }
-            if (bankOfflineTime > TICK_INTERVAL) {
-                displayTimeSkipToast(`Away for ${formatTimeForDisplay(bankOfflineTime)}, time recorded`, "success");
+            if (offlineTimeBank > TICK_INTERVAL) {
+                displayTimeSkipToast(`Away for ${formatTimeForDisplay(offlineTimeBank)}, time recorded`, "success");
+                updateTimeDisplays();
             }
         } else {
             originalMethod();
@@ -366,7 +367,7 @@ function interceptOfflineProgress() {
         // Everything from the original testForOffline().
         return __awaiter(game, void 0, void 0, function* () {
             game.stopMainLoop();
-            game.tickTimestamp -= parseInt(hours * msPerHour);
+            game.tickTimestamp -= hours * msPerHour;
             saveData("all");
             // Except that processOffline() is passed true.
             yield game.processOffline(true);
@@ -394,7 +395,7 @@ function formatTimeForDisplay(time) {
 }
 
 function getPlayerTime() {
-    return ~~parseInt(ctx.characterStorage.getItem("offline_time")); // turns NaN and undefined into '0'
+    return Number(ctx.characterStorage.getItem("offline_time"));
 }
 
 function displayTimeSkipToast(message, badge = "info", duration = 5000) {

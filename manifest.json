@@ -1,8 +1,8 @@
 {
-    "namespace": "bankOfflineTime",
+    "namespace": "offlineTimeBank",
     "setup": "setup.mjs",
     "load": [ 
-        "TimeDisplay.html",
-        "BankOfflineTime.css"
+        "OfflineTimeBank.html",
+        "OfflineTimeBank.css"
     ]
 }
