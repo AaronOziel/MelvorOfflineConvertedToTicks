@@ -312,8 +312,7 @@ function simulateTime(hours) {
     let player_offline_time = getPlayerTime();
     if (player_offline_time < timeToSimulate) {
         displayTimeSkipToast("Insufficient time available to skip that much time.", "danger");
-        //return;
-        player_offline_time += timeToSimulate;
+        return;
     }
     // Hide UI if it is visible
     if (swal.isVisible()) swal.close();
@@ -354,7 +353,9 @@ function interceptOfflineProgress() {
             if (baseOfflineTime > TICK_INTERVAL) {
                 simulateTime(baseOfflineTime / msPerHour);
             }
-            displayTimeSkipToast(`Away for ${formatTimeForDisplay(bankOfflineTime)}, time recorded`, "success");
+            if (bankOfflineTime > TICK_INTERVAL) {
+                displayTimeSkipToast(`Away for ${formatTimeForDisplay(bankOfflineTime)}, time recorded`, "success");
+            }
         } else {
             originalMethod();
         }
