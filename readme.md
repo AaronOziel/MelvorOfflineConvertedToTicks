@@ -50,9 +50,11 @@ Offline Time Bank has several checks to ensure no offline time gets wasted. All 
 I was inspired to make this mod by one of my favorite idle games ever "[Idle Loops](https://omsi6.github.io/loops/)" by [Stopsign](https://stopsign.github.io/). In Loops you do not gain anything while away but instead you bank "Bonus Seconds" and at your discretion you can spend bonus seconds to accelerate time. I also loved using Time Candies from "[Legends of Idleon](https://www.legendsofidleon.com/)" to do small tasks in 1-2hr time skips without having to set a timer to come back several times a day.
 At my core I am rampant min-maxer and if I am not doing things "optimally" a lot of times I stop having fun. Once I maxed in base Melvor just as the expansion launched, I found myself wanting to do various tasks for small periods of time (summoning for only 1 hour) but I wanted to be able to step away from the game for 12hrs+ without feeling like I'm missing out by not switching tasks frequently. Thus this mod idea was born. I dreamed about spending all that time I was away however I chose and I wanted to be able to split up that time among multiple tasks. Since we can't queue actions to optimize away time like some games, I chose to go this route and add the feature myself. Once the new skill Township came out and the ticks system was added for it, I knew that was what I wanted for the main game this whole time and thus the mod began.
 
-A huge part of getting this mod started came from Tetricidal (`[ Tetris ]#1344`) and his mod "[Time Skip](https://mod.io/g/melvoridle/m/time-skip)". Offline Time Bank was developed with his blessing and assistance and will take over as Time Skip's successor. Big shoutout to Tet for the jumpstart to get motivated and expand Time Skip into Offline Time Bank. If you have any questions or concerns tag Tet or me in a comment on the [official discord](https://discord.com/invite/melvoridle)#mod-discussions, or drop me a DM. Have fun!
+### Credits
 
-# GUI Help Wanted
+A huge part of getting this mod started came from Tetricidal (`[ Tetris ]#1344`) and his mod "[Time Skip](https://mod.io/g/melvoridle/m/time-skip)". Offline Time Bank was developed with his blessing and assistance and will take over as Time Skip's successor. Big shoutout to Tet for the jumpstart to get motivated and expand Time Skip into Offline Time Bank. If you have any questions or concerns tag Tet or me (Roaan#7005) in a comment on the [official discord](https://discord.com/invite/melvoridle)#mod-discussions, or drop me a DM. Have fun!
+
+### GUI Help Wanted
 
 Know HTML? CSS? Can you make stuff look pretty? Message me! I am not a UI Guy and any help would be greatly appreciated.
 
