@@ -43,7 +43,7 @@ Example: Base configs with Offline Time Ratio at 60%, then 60% of your away time
 
 Offline Time Bank has several checks to ensure no offline time gets wasted. All error reports are displayed via messages that appear at the bottom of the screen (exactly like getting stunned in thieving). If you experience some odd behavior, check the bottom of the screen.
 
-![Success and Error notification examples](Images/Notifications.png)
+![Success and Error notification examples](images/Notifications.png)
 
 # Inspiration & Motivation
 

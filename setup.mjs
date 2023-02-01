@@ -35,19 +35,19 @@ function headerMainMenuDisplay() {
         }),
         document.getElementById("header-theme").getElementsByClassName("d-flex align-items-right")[0]
     );
-    ui.create(createTimeSkipDisplay(), document.getElementById("time-skip-display-panel"));
-    let menu = document.getElementById("time-skip-menu");
-    menu.appendChild(createTimeSkipButtonArray());
+    ui.create(createTimeBankDisplay(), document.getElementById("time-bank-display-panel"));
+    let menu = document.getElementById("time-bank-menu");
+    menu.appendChild(createTimeBankButtonArray());
     menu.style.display = "none";
     menu.addEventListener("mouseleave", () => (menu.style.display = "none"));
-    document.getElementById("time-skip-display-button").style.fontFamily = "Fira Mono";
+    document.getElementById("time-bank-display-button").style.fontFamily = "Fira Mono";
 }
 
 function updateTimeDisplays() {
     const formattedTimeString = formatTimeForDisplay(getPlayerTime());
     try {
         // These may not exist yet
-        document.getElementById("time-skip-display-button").textContent = formattedTimeString;
+        document.getElementById("time-bank-display-button").textContent = formattedTimeString;
         document.getElementById("offlineTimeBankSmall2").innerText = "\nTime: " + formattedTimeString;
     } catch {}
 }
@@ -55,8 +55,8 @@ function updateTimeDisplays() {
 function patchMinibar() {
     ctx.patch(Minibar, "initialize").after(() => {
         game.minibar.minibarElement.prepend(
-            game.minibar.createMinibarItem("minibar-timeSkip", `${CDNDIR}assets/media/skills/astrology/arachi.svg`, "", {
-                onClick: () => document.getElementById("hover-timeSkip").classList.remove("d-none"),
+            game.minibar.createMinibarItem("minibar-TimeBank", `${CDNDIR}assets/media/skills/astrology/arachi.svg`, "", {
+                onClick: () => document.getElementById("hover-TimeBank").classList.remove("d-none"),
             }).element
         );
     });
@@ -64,37 +64,37 @@ function patchMinibar() {
 
 function additionalMinibarPatches() {
     // Welcome to my spaghetti code. Don't bother trying to understand.
-    const hover_timeSkip = document.getElementById("skill-footer-minibar-items-container").cloneNode();
-    hover_timeSkip.id = "hover-timeSkip";
-    hover_timeSkip.classList.add("d-none");
-    hover_timeSkip.style.minWidth = "200px";
-    document.getElementById("skill-footer-minibar-items-container").parentElement.appendChild(hover_timeSkip);
-    const span = hover_timeSkip.appendChild(document.createElement("span"));
+    const hover_TimeBank = document.getElementById("skill-footer-minibar-items-container").cloneNode();
+    hover_TimeBank.id = "hover-TimeBank";
+    hover_TimeBank.classList.add("d-none");
+    hover_TimeBank.style.minWidth = "200px";
+    document.getElementById("skill-footer-minibar-items-container").parentElement.appendChild(hover_TimeBank);
+    const span = hover_TimeBank.appendChild(document.createElement("span"));
     span.className = "font-size-sm text-center text-white";
     const small = span.appendChild(document.createElement("small"));
-    small.textContent = "Time Skip";
+    small.textContent = "Time Bank";
     const small2 = small.appendChild(document.createElement("small"));
     small2.id = "offlineTimeBankSmall2";
     small2.innerText = "\nTime: " + formatTimeForDisplay(getPlayerTime());
-    const buttonContainer = createTimeSkipButtonArray();
+    const buttonContainer = createTimeBankButtonArray();
     buttonContainer.style.gridTemplateColumns = "repeat(2,1fr)";
-    const minibar_timeSkip = document.getElementById("minibar-timeSkip");
-    minibar_timeSkip.addEventListener("mouseover", () => hover_timeSkip.classList.remove("d-none"));
-    minibar_timeSkip.addEventListener("mouseleave", () => hover_timeSkip.classList.add("d-none"));
+    const minibar_TimeBank = document.getElementById("minibar-TimeBank");
+    minibar_TimeBank.addEventListener("mouseover", () => hover_TimeBank.classList.remove("d-none"));
+    minibar_TimeBank.addEventListener("mouseleave", () => hover_TimeBank.classList.add("d-none"));
     if (settings.section("Time skip menu in skill minibar").get("show-mini-bar") == false) {
-        minibar_timeSkip.classList.add("d-none");
+        minibar_TimeBank.classList.add("d-none");
     }
-    hover_timeSkip.addEventListener("mouseover", () => hover_timeSkip.classList.remove("d-none"));
-    hover_timeSkip.addEventListener("mouseleave", () => hover_timeSkip.classList.add("d-none"));
-    hover_timeSkip.appendChild(buttonContainer);
+    hover_TimeBank.addEventListener("mouseover", () => hover_TimeBank.classList.remove("d-none"));
+    hover_TimeBank.addEventListener("mouseleave", () => hover_TimeBank.classList.add("d-none"));
+    hover_TimeBank.appendChild(buttonContainer);
 }
 
 function createHeaderTimeDisplay(props) {
     return {
-        $template: "#time-skip-display",
+        $template: "#time-bank-display",
         timeAsString: props.text,
         click() {
-            let menu = document.getElementById("time-skip-menu");
+            let menu = document.getElementById("time-bank-menu");
             // Invert menu display
             menu.style.display = menu.style.display == "none" ? "block" : "none";
             if (DEBUG) {
@@ -105,13 +105,13 @@ function createHeaderTimeDisplay(props) {
     };
 }
 
-function createTimeSkipDisplay(props) {
+function createTimeBankDisplay(props) {
     return {
-        $template: "#time-skip-menu",
+        $template: "#time-bank-menu",
     };
 }
 
-function createTimeSkipButtonArray() {
+function createTimeBankButtonArray() {
     const buttonContainer = document.createElement("div");
     buttonContainer.style.display = "grid";
     buttonContainer.style.gridTemplateColumns = "repeat(4,1fr)";
@@ -146,9 +146,9 @@ function createSettings() {
         default: true,
         onChange: (newValue, oldValue) => {
             if (newValue) {
-                document.getElementById("minibar-timeSkip").classList.remove("d-none");
+                document.getElementById("minibar-TimeBank").classList.remove("d-none");
             } else {
-                document.getElementById("minibar-timeSkip").classList.add("d-none");
+                document.getElementById("minibar-TimeBank").classList.add("d-none");
             }
         },
     });
@@ -167,12 +167,12 @@ function createSettings() {
                 let multiplier = parseFloat(value).toFixed(2);
                 multiplier = Math.round((multiplier + Number.EPSILON) * 100) / 100;
                 if (multiplier < 0.1 || multiplier > 10) {
-                    displayTimeSkipToast(`"${multiplier}" is not a valid time multiplier [Min = 0.1, Max = 10]`, "danger");
+                    displayTimeBankToast(`"${multiplier}" is not a valid time multiplier [Min = 0.1, Max = 10]`, "danger");
                     return false;
                 }
                 return true;
             } catch {
-                displayTimeSkipToast(`"${value}" is not a valid number [Min = 0.1, Max = 10]`, "danger");
+                displayTimeBankToast(`"${value}" is not a valid number [Min = 0.1, Max = 10]`, "danger");
             }
             7;
         },
@@ -188,8 +188,8 @@ function createSettings() {
     });
 
     // Slider
-    const numberName = "timeSkipRangeNumberInput";
-    const sliderName = "timeSkipRangeSliderInput";
+    const numberName = "TimeBankRangeNumberInput";
+    const sliderName = "TimeBankRangeSliderInput";
 
     settings.type("slider", {
         render: renderOfflineRatioSettingsSlider,
@@ -245,11 +245,11 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
 
     // Slider Input
     const range = document.createElement("div");
-    range.className = "timeSkipRangeRow";
+    range.className = "TimeBankRangeRow";
 
     const labelRangeBase = document.createElement("label");
     labelRangeBase.textContent = "Base";
-    labelRangeBase.id = "timeSkipRangeRowEdge";
+    labelRangeBase.id = "TimeBankRangeRowEdge";
 
     labelRangeBase.style.minWidth = "10";
     labelRangeBase.style.display = "flex";
@@ -263,12 +263,12 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
     sliderInput.max = 100;
     sliderInput.value = value;
     sliderInput.className = "slider";
-    sliderInput.classList.add("timeSkipRangeRowSlider");
+    sliderInput.classList.add("TimeBankRangeRowSlider");
     sliderInput.style.padding = 25;
 
     const labelRangeModded = document.createElement("label");
     labelRangeModded.textContent = "Banked";
-    labelRangeModded.id = "timeSkipRangeRowEdge";
+    labelRangeModded.id = "TimeBankRangeRowEdge";
 
     labelRangeModded.style.minWidth = "10";
     labelRangeModded.style.display = "flex";
@@ -304,19 +304,19 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
 function simulateTime(hours) {
     // Stop a time skip if no action is in progress
     if (game.activeAction === undefined) {
-        displayTimeSkipToast(`No active action, won't skip time while not training`, "danger");
+        displayTimeBankToast(`No active action, won't skip time while not training`, "danger");
         return;
     }
     // Compute if sufficient time is available
     let timeToSimulate = hours * msPerHour;
     let player_offline_time = getPlayerTime();
     if (player_offline_time < timeToSimulate && DEBUG == false) {
-        displayTimeSkipToast("Insufficient time available to skip that much time.", "danger");
+        displayTimeBankToast("Insufficient time available to skip that much time.", "danger");
         return;
     }
     // Hide UI if it is visible
     if (swal.isVisible()) swal.close();
-    document.getElementById("time-skip-menu").style.display = "none";
+    document.getElementById("time-bank-menu").style.display = "none";
     // Preform time skip and subtract used time
     game.testForOffline(hours);
     game.township.availableGameTicksToSpend += Math.floor((hours * 60) / (game.township.TICK_LENGTH / 60));
@@ -354,7 +354,7 @@ function interceptOfflineProgress() {
                 simulateTime(baseOfflineTime / msPerHour);
             }
             if (offlineTimeBank > TICK_INTERVAL) {
-                displayTimeSkipToast(`Away for ${formatTimeForDisplay(offlineTimeBank)}, time recorded`, "success");
+                displayTimeBankToast(`Away for ${formatTimeForDisplay(offlineTimeBank)}, time recorded`, "success");
                 updateTimeDisplays();
             }
         } else {
@@ -398,7 +398,7 @@ function getPlayerTime() {
     return Number(ctx.characterStorage.getItem("offline_time"));
 }
 
-function displayTimeSkipToast(message, badge = "info", duration = 5000) {
+function displayTimeBankToast(message, badge = "info", duration = 5000) {
     /* Badges are:
         - primary: blue
         - secondary: grey
