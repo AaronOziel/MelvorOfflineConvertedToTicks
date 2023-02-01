@@ -14,3 +14,4 @@
     -   [x] Max away time (default unlimited?)
     -   [x] Away time multiplier (default 0.8?)
     -   [x] Minibar widget showing (default: true)
+    
