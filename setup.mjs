@@ -1,6 +1,6 @@
 let ctx;
 let settings;
-const DEBUG = true;
+const DEBUG = false;
 const hour = 1;
 const hourArray = [2, 4, 8, 16];
 const minute = hour / 60;
@@ -30,7 +30,9 @@ export async function setup(gameContext) {
 
 function headerMainMenuDisplay() {
     ui.create(
-        createHeaderTimeDisplay({ text: formatTimeForDisplay(getPlayerTime()) }),
+        createHeaderTimeDisplay({
+            text: formatTimeForDisplay(getPlayerTime()),
+        }),
         document.getElementById("header-theme").getElementsByClassName("d-flex align-items-right")[0]
     );
     ui.create(createTimeSkipDisplay(), document.getElementById("time-skip-display-panel"));
@@ -42,9 +44,12 @@ function headerMainMenuDisplay() {
 }
 
 function updateTimeDisplays() {
-    const time = formatTimeForDisplay(getPlayerTime());
-    document.getElementById("time-skip-display-button").textContent = time;
-    document.getElementById("octtSmall2").innerText = "\nTime: " + time;
+    const formattedTimeString = formatTimeForDisplay(getPlayerTime());
+    try {
+        // These may not exist yet
+        document.getElementById("time-skip-display-button").textContent = formattedTimeString;
+        document.getElementById("offlineTimeBankSmall2").innerText = "\nTime: " + formattedTimeString;
+    } catch {}
 }
 
 function patchMinibar() {
@@ -62,14 +67,14 @@ function additionalMinibarPatches() {
     const hover_timeSkip = document.getElementById("skill-footer-minibar-items-container").cloneNode();
     hover_timeSkip.id = "hover-timeSkip";
     hover_timeSkip.classList.add("d-none");
-    hover_timeSkip.style.maxWidth = "300";
+    hover_timeSkip.style.minWidth = "200px";
     document.getElementById("skill-footer-minibar-items-container").parentElement.appendChild(hover_timeSkip);
     const span = hover_timeSkip.appendChild(document.createElement("span"));
     span.className = "font-size-sm text-center text-white";
     const small = span.appendChild(document.createElement("small"));
     small.textContent = "Time Skip";
     const small2 = small.appendChild(document.createElement("small"));
-    small2.id = "octtSmall2";
+    small2.id = "offlineTimeBankSmall2";
     small2.innerText = "\nTime: " + formatTimeForDisplay(getPlayerTime());
     const buttonContainer = createTimeSkipButtonArray();
     buttonContainer.style.gridTemplateColumns = "repeat(2,1fr)";
@@ -93,7 +98,7 @@ function createHeaderTimeDisplay(props) {
             // Invert menu display
             menu.style.display = menu.style.display == "none" ? "block" : "none";
             if (DEBUG) {
-                ctx.characterStorage.setItem("offline_time", getPlayerTime() + Math.floor(Math.random() * msPerHour * 24)); // Give a (0-1) days worth of time on press.
+                ctx.characterStorage.setItem("offline_time", getPlayerTime() + Math.floor(Math.random() * msPerHour * 96)); // Give a (0-4) days worth of time on press.
                 updateTimeDisplays();
             }
         },
@@ -110,14 +115,14 @@ function createTimeSkipButtonArray() {
     const buttonContainer = document.createElement("div");
     buttonContainer.style.display = "grid";
     buttonContainer.style.gridTemplateColumns = "repeat(4,1fr)";
-    buttonContainer.style.margin = "0px 0px 10px 10px";
     function addButtons(type, arr) {
         for (const time of arr) {
             const button = document.createElement("button");
-            button.className = "btn btn-sm btn-outline-secondary overlay-container overlay-bottom skill-icon-sm font-w700 font-size-xs mb-0 text-white";
+            button.className = "btn btn-lg btn-alt-info text-white";
             button.style.backgroundColor = "black";
             button.textContent = time + type;
             button.style.display = "grid";
+            button.style.margin = "5px";
             button.style.justifyContent = "center";
             const minOrHour = type === "m" ? minute : hour;
             button.addEventListener("click", () => {
@@ -181,6 +186,117 @@ function createSettings() {
         default: 24,
         min: -1,
     });
+
+    // Slider
+    const numberName = "timeSkipRangeNumberInput";
+    const sliderName = "timeSkipRangeSliderInput";
+
+    settings.type("slider", {
+        render: renderOfflineRatioSettingsSlider,
+        get: (root) => {
+            try {
+                return root.querySelector(sliderName).value;
+            } catch {}
+        },
+        set: (root, value) => {
+            try {
+                root.querySelector(numberName).value = value;
+                root.querySelector(sliderName).value = value;
+            } catch {}
+        },
+    });
+
+    settings.section("Offline Time Ratio").add({
+        type: "slider",
+        name: "offlineTimeRatioSlider",
+        default: 100,
+        numberName: numberName,
+        sliderName: sliderName,
+    });
+}
+
+// I think I am gonna ignore all params, but want the signature to match the docs
+// Someday I dream of this: https://codepen.io/vsync/pen/mdEJMLv
+function renderOfflineRatioSettingsSlider(name, onChange, config) {
+    let value;
+    try {
+        value = parseInt(settings.section("Offline Time Ratio").get("offlineTimeRatioSlider"));
+    } catch {
+        value = config.default;
+    }
+
+    // Typing Input
+    const numberInput = document.createElement("input");
+    numberInput.id = config.numberName;
+    numberInput.type = "number";
+    numberInput.name = config.numberName;
+    numberInput.value = value;
+    numberInput.className = "form-control form-control-lg";
+
+    const labelBase = document.createElement("label");
+    labelBase.for = config.numberName;
+    labelBase.textContent = "Percent of time banked for later instead:";
+
+    if (config.hint) {
+        const hint = document.createElement("small");
+        hint.textContent = config.hint;
+        labelBase.appendChild(hint);
+    }
+
+    // Slider Input
+    const range = document.createElement("div");
+    range.className = "timeSkipRangeRow";
+
+    const labelRangeBase = document.createElement("label");
+    labelRangeBase.textContent = "Base";
+    labelRangeBase.id = "timeSkipRangeRowEdge";
+
+    labelRangeBase.style.minWidth = "10";
+    labelRangeBase.style.display = "flex";
+    labelRangeBase.style.justifyContent = "center";
+    labelRangeBase.style.alignContent = "center";
+
+    const sliderInput = document.createElement("input");
+    sliderInput.id = config.sliderName;
+    sliderInput.type = "range";
+    sliderInput.min = 0;
+    sliderInput.max = 100;
+    sliderInput.value = value;
+    sliderInput.className = "slider";
+    sliderInput.classList.add("timeSkipRangeRowSlider");
+    sliderInput.style.padding = 25;
+
+    const labelRangeModded = document.createElement("label");
+    labelRangeModded.textContent = "Banked";
+    labelRangeModded.id = "timeSkipRangeRowEdge";
+
+    labelRangeModded.style.minWidth = "10";
+    labelRangeModded.style.display = "flex";
+    labelRangeModded.style.justifyContent = "center";
+    labelRangeModded.style.alignContent = "center";
+
+    range.append(...[labelRangeBase, sliderInput, labelRangeModded]);
+
+    function numberOnChange() {
+        let value = document.getElementById(config.numberName).value;
+        value = Math.min(Math.max(value, 0), 100);
+        document.getElementById(config.sliderName).value = value;
+        document.getElementById(config.numberName).value = value;
+    }
+
+    function sliderOnChange() {
+        let value = document.getElementById(config.sliderName).value;
+        value = Math.min(Math.max(value, 0), 100);
+        document.getElementById(config.sliderName).value = value;
+        document.getElementById(config.numberName).value = value;
+    }
+
+    numberInput.addEventListener("change", numberOnChange);
+    sliderInput.addEventListener("change", sliderOnChange);
+
+    const root = document.createElement("div");
+    root.append(...[labelBase, numberInput, range]);
+    return root;
 }
 
 // FUNCTIONALITY
@@ -194,7 +310,7 @@ function simulateTime(hours) {
     // Compute if sufficient time is available
     let timeToSimulate = hours * msPerHour;
     let player_offline_time = getPlayerTime();
-    if (player_offline_time < timeToSimulate) {
+    if (player_offline_time < timeToSimulate && DEBUG == false) {
         displayTimeSkipToast("Insufficient time available to skip that much time.", "danger");
         return;
     }
@@ -205,15 +321,14 @@ function simulateTime(hours) {
     game.testForOffline(hours);
     game.township.availableGameTicksToSpend += Math.floor((hours * 60) / (game.township.TICK_LENGTH / 60));
     game.township.renderQueue.ticksAvailable = true;
-    ctx.characterStorage.setItem("offline_time", player_offline_time - timeToSimulate);
-    console.log(`Successfully spent ${timeToSimulate} time [${player_offline_time} -> ${getPlayerTime()}]`);
+    ctx.characterStorage.setItem("offline_time", Math.max(player_offline_time - timeToSimulate, 0));
+    if (DEBUG) console.log(`Successfully spent ${timeToSimulate} time [${player_offline_time} -> ${getPlayerTime()}]`);
     // Update button text and minibar text to display new correct time
     updateTimeDisplays();
 }
 
 function interceptOfflineProgress() {
     ctx.patch(Game, "processOffline").replace((originalMethod, isModCall) => {
-        console.log(`Process offline: ${isModCall}`);
         if (!isModCall) {
             // Intercept offline time
             let newTime = Date.now() - game.tickTimestamp;
@@ -222,23 +337,37 @@ function interceptOfflineProgress() {
                 newTime = Math.min(newTime, settings.section("Maximum Offline Time").get("max-offline-time") * msPerHour);
             }
             newTime *= settings.section("Offline Time Multiplier").get("offline-time-multiplier");
-            ctx.characterStorage.setItem("offline_time", getPlayerTime() + newTime);
+            if (DEBUG) newTime += msPerHour * 20 * Math.random();
+            // Split offline time into two behaviors
+            // baseOfflineTime - Behaves just like the base game giving progress
+            // offlineTimeBank - Saves the time into the bank instead and gives no progress
+            let timeRatio = parseInt(settings.section("Offline Time Ratio").get("offlineTimeRatioSlider")) / 100;
+            let offlineTimeBank = newTime * timeRatio;
+            let baseOfflineTime = newTime - offlineTimeBank;
             // Reset 'last seen' to now
             // TODO: Not sure if even needed...
             game.tickTimestamp = Date.now();
-            displayTimeSkipToast(`Away for ${formatTimeForDisplay(newTime)}, time recorded`, "success");
+            // Bank all time
+            ctx.characterStorage.setItem("offline_time", getPlayerTime() + newTime);
+            // Then spend some of it as normal if Offline Time Ratio > 1
+            if (baseOfflineTime > TICK_INTERVAL) {
+                simulateTime(baseOfflineTime / msPerHour);
+            }
+            if (offlineTimeBank > TICK_INTERVAL) {
+                displayTimeSkipToast(`Away for ${formatTimeForDisplay(offlineTimeBank)}, time recorded`, "success");
+                updateTimeDisplays();
+            }
         } else {
             originalMethod();
         }
     });
 
     // Help processOffline differentiate between time skip call and offline progress call.
-    ctx.patch(Game, "testForOffline").replace((originalMethod, timeToGoBack) => {
+    ctx.patch(Game, "testForOffline").replace((originalMethod, hours) => {
         // Everything from the original testForOffline().
         return __awaiter(game, void 0, void 0, function* () {
             game.stopMainLoop();
-            console.log("Going back in time - " + timeToGoBack);
-            game.tickTimestamp -= timeToGoBack * msPerHour;
+            game.tickTimestamp -= hours * msPerHour;
             saveData("all");
             // Except that processOffline() is passed true.
             yield game.processOffline(true);
@@ -248,6 +377,9 @@ function interceptOfflineProgress() {
 }
 
 function formatTimeForDisplay(time) {
+    if (!time) {
+        return "00h 00m";
+    }
     // Calculate totals
     const totalSeconds = parseInt(Math.floor(time / 1000));
     const totalMinutes = parseInt(Math.floor(totalSeconds / 60));
@@ -263,8 +395,7 @@ function formatTimeForDisplay(time) {
 }
 
 function getPlayerTime() {
-    let time = parseInt(ctx.characterStorage.getItem("offline_time"));
-    return time === undefined || isNaN(time) ? 0 : time;
+    return Number(ctx.characterStorage.getItem("offline_time"));
 }
 
 function displayTimeSkipToast(message, badge = "info", duration = 5000) {

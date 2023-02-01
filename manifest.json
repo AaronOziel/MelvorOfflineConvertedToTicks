@@ -1,5 +1,8 @@
 {
-    "namespace": "octt",
+    "namespace": "offlineTimeBank",
     "setup": "setup.mjs",
-    "load": "TimeDisplay.html"
+    "load": [ 
+        "OfflineTimeBank.html",
+        "OfflineTimeBank.css"
+    ]
 }

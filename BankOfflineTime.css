@@ -1,0 +1,11 @@
+.timeSkipRangeRow {
+    display: flex;
+    flex-direction: row;
+    padding: 10px;
+}
+
+.timeSkipRangeRowSlider {
+    flex: 1;
+    margin-left: 4%;
+    margin-right: 4%;
+}
