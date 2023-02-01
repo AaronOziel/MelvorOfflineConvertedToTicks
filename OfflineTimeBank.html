@@ -17,12 +17,3 @@
         </div>
     </div>
 </template>
-
-<template id="time-bank-slider">
-    <div class="time-bank-slider" style='--min:0; --max:99; --step:5; --value:75; --text-value:"75";'>
-        <input type="range" min="1" max="100" step="5"
-            oninput="this.parentNode.style.setProperty('--value',this.value); this.parentNode.style.setProperty('--text-value', JSON.stringify(this.value))">
-        <output></output>
-        <div class='time-bank-slider__progress'></div>
-    </div>
-</template>

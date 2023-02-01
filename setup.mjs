@@ -174,7 +174,6 @@ function createSettings() {
             } catch {
                 displayTimeBankToast(`"${value}" is not a valid number [Min = 0.1, Max = 10]`, "danger");
             }
-            7;
         },
     });
 
@@ -244,17 +243,12 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
     }
 
     // Slider Input
-    const range = document.createElement("div");
-    range.className = "TimeBankRangeRow";
+    const sliderRowDiv = document.createElement("div");
+    sliderRowDiv.className = "TimeBankRangeRow";
 
     const labelRangeBase = document.createElement("label");
     labelRangeBase.textContent = "Base";
     labelRangeBase.id = "TimeBankRangeRowEdge";
-
-    labelRangeBase.style.minWidth = "10";
-    labelRangeBase.style.display = "flex";
-    labelRangeBase.style.justifyContent = "center";
-    labelRangeBase.style.alignContent = "center";
 
     const sliderInput = document.createElement("input");
     sliderInput.id = config.sliderName;
@@ -270,12 +264,7 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
     labelRangeModded.textContent = "Banked";
     labelRangeModded.id = "TimeBankRangeRowEdge";
 
-    labelRangeModded.style.minWidth = "10";
-    labelRangeModded.style.display = "flex";
-    labelRangeModded.style.justifyContent = "center";
-    labelRangeModded.style.alignContent = "center";
-
-    range.append(...[labelRangeBase, sliderInput, labelRangeModded]);
+    sliderRowDiv.append(...[labelRangeBase, sliderInput, labelRangeModded]);
 
     function numberOnChange() {
         let value = document.getElementById(config.numberName).value;
@@ -295,7 +284,7 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
     sliderInput.addEventListener("change", sliderOnChange);
 
     const root = document.createElement("div");
-    root.append(...[labelBase, numberInput, range]);
+    root.append(...[labelBase, numberInput, sliderRowDiv]);
     return root;
 }
 
