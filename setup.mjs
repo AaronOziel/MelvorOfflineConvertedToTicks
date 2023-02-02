@@ -326,7 +326,6 @@ function interceptOfflineProgress() {
                 newTime = Math.min(newTime, settings.section("Maximum Offline Time").get("max-offline-time") * msPerHour);
             }
             newTime *= settings.section("Offline Time Multiplier").get("offline-time-multiplier");
-            if (DEBUG) newTime += msPerHour * 20 * Math.random();
             // Split offline time into two behaviors
             // baseOfflineTime - Behaves just like the base game giving progress
             // offlineTimeBank - Saves the time into the bank instead and gives no progress
@@ -337,9 +336,7 @@ function interceptOfflineProgress() {
             // TODO: Not sure if even needed...
             game.tickTimestamp = Date.now();
             // Bank all time
-            if (DEBUG) console.log(`Banking existing ${getPlayerTime()} + ${newTime}`);
             ctx.characterStorage.setItem("offline_time", getPlayerTime() + newTime);
-            if (DEBUG) console.log(`Did it bank? ${getPlayerTime()}`);
             // Then spend some of it as normal if Offline Time Ratio > 1
             if (baseOfflineTime > TICK_INTERVAL) {
                 simulateTime(baseOfflineTime / msPerHour);
