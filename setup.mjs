@@ -180,7 +180,7 @@ function createSettings() {
     settings.section("Maximum Offline Time").add({
         type: "number",
         name: "max-offline-time",
-        label: "Maximum number of offline hours that can accumulate.",
+        label: "Maximum number of offline hours that can accumulate. (Multiplier applied after max time is calculated)",
         hint: "[Base game is 24hrs, -1 = infinite]",
         default: 24,
         min: -1,
