@@ -1,3 +1,5 @@
+# Offline Time Bank
+### By: Roaan and Tetricidal
 ![Offline Time Bank Logo made by Me ;)](images/OfflineTimeBankLogo.png)
 
   Offline Time Bank changes the way offline time functions. Instead of receiving away gains when you log in, the away gains are removed and all the time you would have gained is instead stored in a time bank that you can use whenever you want. Using banked time allows you to "time skip" into the future and get away gains just like you originally would have in the base game. This system is nearly identical to how the "ticks" system in township works with only minor differences. **If you hate the ticks system from township then this mod is not for you, and that's okay**.
@@ -36,7 +38,8 @@
 ### **Offline Time Ratio**
 
   Allows you to split your offline time between banking with the mod and using normal base game behavior. The value indicates what % of your offline time will be banked for later. The rest of the time is awarded just like the base game as well as not being subject to the Offline Time Multiplier setting.
-  **Example:** If you use base configs with but with Offline Time Ratio at 60%, then 60% of your away time will be withheld and banked with the time multiplier applied. 24hrs away = 9h 36m (24h x 40%) normal afk reward and 14h 31m (24 x 60% x 0.8) time banked. **Warning:** offline time that is not banked is will still be subject to the 24hrs offline maximum from the base game. Even if "Maximum Offline Time" is set to -1 (infinite).
+  
+  **Example:** If you use base configs with but with Offline Time Ratio at 60%, then 60% of your away time will be banked with the time multiplier applied. 24hrs away = 9h 36m (24h x 40%) normal afk reward and 14h 31m (24 x 60% x 0.8) time banked. **Warning:** offline time that is not banked is will still be subject to the 24hrs offline maximum from the base game. Even if "Maximum Offline Time" is set to -1 (infinite).
 [Default = 100%]
 
 ## Error Messages
@@ -48,6 +51,7 @@
 # Inspiration & Motivation
 
   I was inspired to make this mod by one of my favorite idle games ever "[Idle Loops](https://omsi6.github.io/loops/)" by [Stopsign](https://stopsign.github.io/). In Loops you do not gain anything while away but instead you bank "Bonus Seconds" and at your discretion you can spend bonus seconds to accelerate time. I also loved using Time Candies from "[Legends of Idleon](https://www.legendsofidleon.com/)" to do small tasks in 1-2hr time skips without having to set a timer to come back several times a day.
+  
   At my core I am rampant min-maxer and if I am not doing things "optimally" a lot of times I stop having fun. Once I maxed in base Melvor just as the expansion launched, I found myself wanting to do various tasks for small periods of time (summoning for only 1 hour) but I wanted to be able to step away from the game for 12hrs+ without feeling like I'm missing out by not switching tasks frequently. Thus this mod idea was born. I dreamed about spending all that time I was away however I chose and I wanted to be able to split up that time among multiple tasks. Since we can't queue actions to optimize away time like some games, I chose to go this route and add the feature myself. Once the new skill Township came out and the ticks system was added for it, I knew that was what I wanted for the main game this whole time and thus the mod began.
 
 ### Credits
@@ -65,6 +69,7 @@ Default|0.8|24hr|100%|The way Malcs intended
 Dev Mode|0.8|-1|100%|Personally, I'll be playing this way 
 Set It and Forget It|1.0|-1|100%|100% efficient, infinite away time
 Vanilla+|1.0|24hr|25%|I want to play mostly normally and bank a little time on the side
+Long Grind Mode|0.8|-1|0%|I am training an infinite skill (Agi/Ast/etc) and want avoid the tax while I train
 
 ### P.S.
 
