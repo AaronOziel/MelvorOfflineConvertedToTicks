@@ -337,7 +337,9 @@ function interceptOfflineProgress() {
             // TODO: Not sure if even needed...
             game.tickTimestamp = Date.now();
             // Bank all time
+            console.log(`Banking existing ${getPlayerTime()} + ${newTime}`);
             ctx.characterStorage.setItem("offline_time", getPlayerTime() + newTime);
+            console.log(`Did it bank? ${getPlayerTime()}`);
             // Then spend some of it as normal if Offline Time Ratio > 1
             if (baseOfflineTime > TICK_INTERVAL) {
                 simulateTime(baseOfflineTime / msPerHour);
@@ -384,7 +386,9 @@ function formatTimeForDisplay(time) {
 }
 
 function getPlayerTime() {
-    return Number(ctx.characterStorage.getItem("offline_time"));
+    let time = Number(ctx.characterStorage.getItem("offline_time"));
+    //return Math.max(time, ~~time)
+    return ~~time ? time : 0; // converts `time` twice resulting in 0 if it was undefined or NaN
 }
 
 function displayTimeBankToast(message, badge = "info", duration = 5000) {
