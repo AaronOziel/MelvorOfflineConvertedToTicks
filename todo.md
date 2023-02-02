@@ -3,6 +3,7 @@
 -   [ ] Make the skip buttons look a little prettier
 -   [ ] _DREAM_ Maybe incorporate the time estimate mod to determine if the current time skip will result in wasted time? (ie: Time skipping cooking for 4hrs with only 69 raw shrimp)
 -   [ ] Add a console command (expose an API) that allows time to be manipulated (console command to add/subtract time)
+-   [ ] Add a "Time Skip X" for the user to skip a custom amount of time
 
 # Done
 

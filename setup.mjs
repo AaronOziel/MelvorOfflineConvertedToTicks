@@ -70,9 +70,11 @@ function additionalMinibarPatches() {
     hover_TimeBank.style.minWidth = "200px";
     document.getElementById("skill-footer-minibar-items-container").parentElement.appendChild(hover_TimeBank);
     const span = hover_TimeBank.appendChild(document.createElement("span"));
-    span.className = "font-size-sm text-center text-white";
+    span.className = "text-center text-white";
+    span.style.fontSize = "24px";
     const small = span.appendChild(document.createElement("small"));
     small.textContent = "Time Bank";
+    small.style.fontWeight = "bold";
     const small2 = small.appendChild(document.createElement("small"));
     small2.id = "offlineTimeBankSmall2";
     small2.innerText = "\nTime: " + formatTimeForDisplay(getPlayerTime());
@@ -157,7 +159,7 @@ function createSettings() {
         type: "number",
         name: "offline-time-multiplier",
         label: "Since time skipping is 100% efficient with next to nothing wasted, it may be more realistic to only get some fraction of offline time since it is now more valuable than normal.",
-        hint: "[10 - 0.1]",
+        hint: "[10 - 0.1] (ex: 0.8 = 80%)",
         default: 0.8,
         min: 0.1,
         max: 10,
@@ -195,10 +197,13 @@ function createSettings() {
         get: (root) => {
             try {
                 return root.querySelector(sliderName).value;
-            } catch {}
+            } catch {
+                return 100;
+            }
         },
         set: (root, value) => {
             try {
+                //settings.section("Offline Time Ratio").set("offlineTimeRatioSlider", value);
                 root.querySelector(numberName).value = value;
                 root.querySelector(sliderName).value = value;
             } catch {}
@@ -212,6 +217,7 @@ function createSettings() {
         numberName: numberName,
         sliderName: sliderName,
     });
+    console.log("Settings Created");
 }
 
 // I think I am gonna ignore all params, but want the signature to match the docs
@@ -224,11 +230,12 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
         value = config.default;
     }
 
+    console.log("Render get ratio " + value);
+
     // Typing Input
     const numberInput = document.createElement("input");
     numberInput.id = config.numberName;
     numberInput.type = "number";
-    numberInput.name = config.numberName;
     numberInput.value = value;
     numberInput.className = "form-control form-control-lg";
 
@@ -338,6 +345,17 @@ function interceptOfflineProgress() {
             // Bank all time
             ctx.characterStorage.setItem("offline_time", getPlayerTime() + newTime);
             // Then spend some of it as normal if Offline Time Ratio > 1
+            console.log(
+                [
+                    newTime,
+                    settings,
+                    settings.section("Offline Time Multiplier").get("offline-time-multiplier"),
+                    settings.section("Offline Time Ratio").get("offlineTimeRatioSlider"),
+                    timeRatio,
+                    offlineTimeBank,
+                    baseOfflineTime,
+                ].join(", ")
+            );
             if (baseOfflineTime > TICK_INTERVAL) {
                 simulateTime(baseOfflineTime / msPerHour);
             }
@@ -405,4 +423,23 @@ function displayTimeBankToast(message, badge = "info", duration = 5000) {
         </div>`,
         duration
     );
+}
+
+function singleUseTimeNotification(ctx) {
+    let skipMessage = ~~ctx.accountStorage.getItem("newModOfflineTimeBank"); // turns undefined and NaN into 0
+    if (!skipMessage) {
+        ctx.accountStorage.setItem("newModOfflineTimeBank", true);
+        new Swal();
+        Swal.fire({
+            title: "<strong>New Mod Available</strong>",
+            html:
+                '<img src="https://github.com/AaronOziel/OfflineTimeBank/blob/master/images/OfflineTimeBankLogo.png?raw=true" alt="" width="200" height="200"></br>' +
+                "This mod is getting reinvented as new mod called <b>Offline Time Bank</b>! The new mod turns Time Skipping into a legit game mode, its no long a cheat!</br>" +
+                'Please search for it in the Mod Manager or visit the <a href="https://mod.io/g/melvoridle/m/offline-time-bank">mod.io page</a> to see more.',
+            focusConfirm: true,
+            confirmButtonText: '<i class="fa fa-thumbs-up"></i> Thanks!',
+            confirmButtonAriaLabel: "Thumbs up, great!",
+            footer: "this message will only be displayed once",
+        });
+    }
 }
