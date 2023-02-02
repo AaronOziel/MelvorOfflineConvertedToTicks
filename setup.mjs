@@ -337,9 +337,9 @@ function interceptOfflineProgress() {
             // TODO: Not sure if even needed...
             game.tickTimestamp = Date.now();
             // Bank all time
-            console.log(`Banking existing ${getPlayerTime()} + ${newTime}`);
+            if (DEBUG) console.log(`Banking existing ${getPlayerTime()} + ${newTime}`);
             ctx.characterStorage.setItem("offline_time", getPlayerTime() + newTime);
-            console.log(`Did it bank? ${getPlayerTime()}`);
+            if (DEBUG) console.log(`Did it bank? ${getPlayerTime()}`);
             // Then spend some of it as normal if Offline Time Ratio > 1
             if (baseOfflineTime > TICK_INTERVAL) {
                 simulateTime(baseOfflineTime / msPerHour);
