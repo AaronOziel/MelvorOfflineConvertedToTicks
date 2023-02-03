@@ -195,18 +195,11 @@ function createSettings() {
     settings.type("slider", {
         render: renderOfflineRatioSettingsSlider,
         get: (root) => {
-            try {
-                return root.querySelector(sliderName).value;
-            } catch {
-                return 100;
-            }
+            return root.querySelector("#" + sliderName).value;
         },
         set: (root, value) => {
-            try {
-                //settings.section("Offline Time Ratio").set("offlineTimeRatioSlider", value);
-                root.querySelector(numberName).value = value;
-                root.querySelector(sliderName).value = value;
-            } catch {}
+            root.querySelector("#" + sliderName).value = value;
+            root.querySelector("#" + numberName).value = value;
         },
     });
 
@@ -288,10 +281,14 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
     }
 
     numberInput.addEventListener("change", numberOnChange);
+    numberInput.addEventListener("change", onChange);
     sliderInput.addEventListener("change", sliderOnChange);
+    sliderInput.addEventListener("change", onChange);
 
     const root = document.createElement("div");
     root.append(...[labelBase, numberInput, sliderRowDiv]);
+    root.name = name;
+    root.id = name;
     return root;
 }
 
@@ -345,17 +342,6 @@ function interceptOfflineProgress() {
             // Bank all time
             ctx.characterStorage.setItem("offline_time", getPlayerTime() + newTime);
             // Then spend some of it as normal if Offline Time Ratio > 1
-            console.log(
-                [
-                    newTime,
-                    settings,
-                    settings.section("Offline Time Multiplier").get("offline-time-multiplier"),
-                    settings.section("Offline Time Ratio").get("offlineTimeRatioSlider"),
-                    timeRatio,
-                    offlineTimeBank,
-                    baseOfflineTime,
-                ].join(", ")
-            );
             if (baseOfflineTime > TICK_INTERVAL) {
                 simulateTime(baseOfflineTime / msPerHour);
             }
@@ -423,23 +409,4 @@ function displayTimeBankToast(message, badge = "info", duration = 5000) {
         </div>`,
         duration
     );
-}
-
-function singleUseTimeNotification(ctx) {
-    let skipMessage = ~~ctx.accountStorage.getItem("newModOfflineTimeBank"); // turns undefined and NaN into 0
-    if (!skipMessage) {
-        ctx.accountStorage.setItem("newModOfflineTimeBank", true);
-        new Swal();
-        Swal.fire({
-            title: "<strong>New Mod Available</strong>",
-            html:
-                '<img src="https://github.com/AaronOziel/OfflineTimeBank/blob/master/images/OfflineTimeBankLogo.png?raw=true" alt="" width="200" height="200"></br>' +
-                "This mod is getting reinvented as new mod called <b>Offline Time Bank</b>! The new mod turns Time Skipping into a legit game mode, its no long a cheat!</br>" +
-                'Please search for it in the Mod Manager or visit the <a href="https://mod.io/g/melvoridle/m/offline-time-bank">mod.io page</a> to see more.',
-            focusConfirm: true,
-            confirmButtonText: '<i class="fa fa-thumbs-up"></i> Thanks!',
-            confirmButtonAriaLabel: "Thumbs up, great!",
-            footer: "this message will only be displayed once",
-        });
-    }
 }
