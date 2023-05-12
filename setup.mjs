@@ -300,20 +300,25 @@ function simulateTime(hours) {
         displayTimeBankToast(`No active action, won't skip time while not training`, "danger");
         return;
     }
+
     // Compute if sufficient time is available
     let timeToSimulate = hours * msPerHour;
     let player_offline_time = getPlayerTime();
-    if (player_offline_time < timeToSimulate && DEBUG == false) {
-        displayTimeBankToast("Insufficient time available to skip that much time.", "danger");
+    if (player_offline_time <= 0) {
+        displayTimeBankToast("No banked time available.", "danger");
         return;
+    }
+
+    if (player_offline_time < timeToSimulate) {
+        timeToSimulate = player_offline_time;
+        hours = timeToSimulate / msPerHour; 
+        displayTimeBankToast(`Not enough time. Skipping ${formatTimeForDisplay(timeToSimulate)}.`, "info");
     }
     // Hide UI if it is visible
     if (swal.isVisible()) swal.close();
     document.getElementById("time-bank-menu").style.display = "none";
     // Preform time skip and subtract used time
     game.testForOffline(hours);
-    game.township.availableGameTicksToSpend += Math.floor((hours * 60) / (game.township.TICK_LENGTH / 60));
-    game.township.renderQueue.ticksAvailable = true;
     ctx.characterStorage.setItem("offline_time", Math.max(player_offline_time - timeToSimulate, 0));
     if (DEBUG) console.log(`Successfully spent ${timeToSimulate} time [${player_offline_time} -> ${getPlayerTime()}]`);
     // Update button text and minibar text to display new correct time
@@ -349,8 +354,12 @@ function interceptOfflineProgress() {
                 displayTimeBankToast(`Away for ${formatTimeForDisplay(offlineTimeBank)}, time recorded`, "success");
                 updateTimeDisplays();
             }
+
+            return new Promise((resolve)=>{
+                return resolve();
+            })
         } else {
-            originalMethod();
+            return originalMethod();
         }
     });
 
@@ -360,7 +369,7 @@ function interceptOfflineProgress() {
         return __awaiter(game, void 0, void 0, function* () {
             game.stopMainLoop();
             game.tickTimestamp -= hours * msPerHour;
-            saveData("all");
+            saveData();
             // Except that processOffline() is passed true.
             yield game.processOffline(true);
             game.startMainLoop();
