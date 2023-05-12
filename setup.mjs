@@ -145,38 +145,6 @@ function additionalMinibarPatches() {
 }
 
 
-function additionalSidebarPatches() {
-    // Welcome to my spaghetti code. Don't bother trying to understand.
-    const hover_TimeBank = document.getElementById("skill-footer-minibar-items-container").cloneNode();
-    hover_TimeBank.id = "hover-TimeBank";
-    hover_TimeBank.classList.add("d-none");
-    hover_TimeBank.style.minWidth = "200px";
-    document.getElementById("skill-footer-minibar-items-container").parentElement.appendChild(hover_TimeBank);
-    const span = hover_TimeBank.appendChild(document.createElement("span"));
-    span.className = "text-center text-white";
-    span.style.fontSize = "24px";
-    const small = span.appendChild(document.createElement("small"));
-    small.textContent = "Time Bank";
-    small.style.fontWeight = "bold";
-    const small2 = small.appendChild(document.createElement("small"));
-    small2.id = "offlineTimeBankSmall2";
-    small2.innerText = "\nTime: " + formatTimeForDisplay(getPlayerTime());
-    const buttonContainer = createTimeBankButtonArray();
-    buttonContainer.style.gridTemplateColumns = "repeat(2,1fr)";
-    
-    const minibar_TimeBank = document.getElementById("minibar-TimeBank");
-    minibar_TimeBank.addEventListener("mouseover", () => hover_TimeBank.classList.remove("d-none"));
-    minibar_TimeBank.addEventListener("mouseleave", () => hover_TimeBank.classList.add("d-none"));
-    if (settings.section("Where to show button").get("show-mini-bar") == false) {
-        minibar_TimeBank.classList.add("d-none");
-    }
-
-    hover_TimeBank.addEventListener("mouseover", () => hover_TimeBank.classList.remove("d-none"));
-    hover_TimeBank.addEventListener("mouseleave", () => hover_TimeBank.classList.add("d-none"));
-    hover_TimeBank.appendChild(buttonContainer);
-}
-
-
 function createHeaderTimeDisplay(props) {
     return {
         $template: "#time-bank-display",
