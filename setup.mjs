@@ -2,7 +2,7 @@ let ctx;
 let settings;
 const DEBUG = false;
 const hour = 1;
-const hourArray = [2, 4, 8, 16];
+const hourArray = [2, 4, 8];
 const minute = hour / 60;
 const minuteArray = [5, 15, 30, 60];
 const msPerHour = 60 * 60 * 1000;
@@ -90,6 +90,30 @@ function patchSidebar() {
             onClick: () => simulateTime(hours),
         })
     }
+	
+	sidebar.category("").item("timebank-sidebar").subitem(`spend-X`, {
+		name: `Spend X Minutes`,
+		onClick: () => {
+			var time = parseInt(prompt('Please input how much time to use (in minutes)'),10);
+			if(!isNaN(time) && time > 0) {
+				simulateTime(time * minute);
+			}
+		}
+	})
+	
+	if(settings.section("Enable add time button").get("show-add-x")) {
+		sidebar.category("").item("timebank-sidebar").subitem(`add-X`, {
+			name: `Add X Minutes`,
+			onClick: () => {
+				var time = parseInt(prompt('Please input how much time to add (in minutes)'),10);
+				if(!isNaN(time) && time > 0) {
+					ctx.characterStorage.setItem("offline_time", getPlayerTime() + time*minute*msPerHour);
+					updateTimeDisplays();
+				}
+			}
+		})
+	}
+
 }
 
 
@@ -189,6 +213,41 @@ function createTimeBankButtonArray() {
     }
     addButtons("m", minuteArray);
     addButtons("h", hourArray);
+	
+	const useX = document.createElement("button");
+	useX.className = "btn btn-lg btn-alt-info text-white";
+	useX.style.backgroundColor = "black";
+	useX.textContent = "X";
+	useX.style.display = "grid";
+	useX.style.margin = "5px";
+	useX.style.justifyContent = "center";
+	useX.addEventListener("click", () => {
+		var time = parseInt(prompt('Please input how much time to use (in minutes)'),10);
+		if(!isNaN(time) && time > 0) {
+			simulateTime(time * minute);
+		}
+	});
+	buttonContainer.appendChild(useX);
+		
+	const addX = document.createElement("button");
+	addX.className = "btn btn-lg btn-alt-info text-white addX-button";
+	addX.style.backgroundColor = "black";
+	addX.textContent = "AddX";
+	addX.style.display = "grid";
+	addX.style.margin = "5px";
+	addX.style.justifyContent = "center";
+	addX.addEventListener("click", () => {
+		var time = parseInt(prompt('Please input how much time to add (in minutes)'),10);
+		if(!isNaN(time) && time > 0) {
+			ctx.characterStorage.setItem("offline_time", getPlayerTime() + time*minute*msPerHour);
+			updateTimeDisplays();
+		}
+	});
+	if (!settings.section("Enable add time button").get("show-add-x")) {
+		addX.style.display = "none";
+	}
+	buttonContainer.appendChild(addX);
+	
     return buttonContainer;
 }
 
@@ -299,6 +358,37 @@ function createSettings() {
         numberName: numberName,
         sliderName: sliderName,
     });
+	
+	settings.section("Enable add time button").add({
+		type: "switch",
+		name: "show-add-x",
+		label: "Enable (Reload Required)",
+		hint: "",
+		default: false,
+		onChange: (newValue, oldValue) => {
+            if (newValue) {
+				sidebar.category("").item("timebank-sidebar").subitem(`add-X`, {
+					name: `Add X Minutes`,
+					onClick: () => {
+						var time = parseInt(prompt('Please input how much time to add (in minutes)'),10);
+						if(!isNaN(time) && time > 0) {
+							ctx.characterStorage.setItem("offline_time", getPlayerTime() + time*minute*msPerHour);
+							updateTimeDisplays();
+						}
+					}
+				})
+				document.querySelectorAll('.addX-button').forEach((addButton) => {
+					addButton.style.display = "grid";
+				});
+            } else {
+				sidebar.category("").item("timebank-sidebar").subitem(`add-X`).remove();
+				document.querySelectorAll('.addX-button').forEach((addButton) => {
+					addButton.style.display = "none";
+				});
+            }
+        },
+    });
+	
     console.log("Settings Created");
 }
 
