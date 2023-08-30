@@ -21,8 +21,10 @@ export async function setup(gameContext) {
     });
 
     ctx.onInterfaceReady(() => {
-        additionalMinibarPatches();
         headerMainMenuDisplay();
+        additionalHeaderPatches();
+        additionalMinibarPatches();
+        patchSidebar();
     });
 }
 
@@ -49,8 +51,49 @@ function updateTimeDisplays() {
         // These may not exist yet
         document.getElementById("time-bank-display-button").textContent = formattedTimeString;
         document.getElementById("offlineTimeBankSmall2").innerText = "\nTime: " + formattedTimeString;
+        sidebar.category("").item("timebank-sidebar").subitem("time-banked", {
+            aside: formattedTimeString
+        })
+
     } catch {}
 }
+
+
+function patchSidebar() {
+    let showSidebar = settings.section("Where to show button").get("show-sidebar");
+    
+    sidebar.category("").item("timebank-sidebar", { 
+        icon: `${CDNDIR}assets/media/skills/astrology/arachi.svg`,
+        name: "Offline Time Bank",
+        after: "melvorD:Bank",
+        rootClass: showSidebar ? null : "d-none",
+    })
+
+    sidebar.category("").item("timebank-sidebar").subitem("time-banked", {
+        name: "Banked",
+        aside: formatTimeForDisplay(getPlayerTime())
+    })
+
+    let type = "m"
+    for (let minutes of minuteArray) {
+        let hours = minutes / 60
+        sidebar.category("").item("timebank-sidebar").subitem(`spend-${hours}`, {
+            name: `Spend ${minutes} ${type === "h" ? "Hours" : "Minutes"}`,
+            onClick: () => simulateTime(hours),
+        })
+    }
+
+    type = "h"
+    for (let hours of hourArray) {
+        sidebar.category("").item("timebank-sidebar").subitem(`spend-${hours}`, {
+            name: `Spend ${hours} ${type === "h" ? "Hours" : "Minutes"}`,
+            onClick: () => simulateTime(hours),
+        })
+    }
+}
+
+
+
 
 function patchMinibar() {
     ctx.patch(Minibar, "initialize").after(() => {
@@ -60,6 +103,14 @@ function patchMinibar() {
             }).element
         );
     });
+}
+
+function additionalHeaderPatches() {
+    const header_TimeBank = document.getElementById("time-bank-display-panel");
+    if (settings.section("Where to show button").get("show-header") == false) {
+        header_TimeBank.classList.remove("d-inline-block");
+        header_TimeBank.classList.add("d-none");
+    }
 }
 
 function additionalMinibarPatches() {
@@ -80,16 +131,19 @@ function additionalMinibarPatches() {
     small2.innerText = "\nTime: " + formatTimeForDisplay(getPlayerTime());
     const buttonContainer = createTimeBankButtonArray();
     buttonContainer.style.gridTemplateColumns = "repeat(2,1fr)";
+    
     const minibar_TimeBank = document.getElementById("minibar-TimeBank");
     minibar_TimeBank.addEventListener("mouseover", () => hover_TimeBank.classList.remove("d-none"));
     minibar_TimeBank.addEventListener("mouseleave", () => hover_TimeBank.classList.add("d-none"));
-    if (settings.section("Time skip menu in skill minibar").get("show-mini-bar") == false) {
+    if (settings.section("Where to show button").get("show-mini-bar") == false) {
         minibar_TimeBank.classList.add("d-none");
     }
+
     hover_TimeBank.addEventListener("mouseover", () => hover_TimeBank.classList.remove("d-none"));
     hover_TimeBank.addEventListener("mouseleave", () => hover_TimeBank.classList.add("d-none"));
     hover_TimeBank.appendChild(buttonContainer);
 }
+
 
 function createHeaderTimeDisplay(props) {
     return {
@@ -140,10 +194,29 @@ function createTimeBankButtonArray() {
 
 function createSettings() {
     settings = ctx.settings;
-    settings.section("Time skip menu in skill minibar").add({
+
+    
+    settings.section("Where to show button").add({
+        type: "switch",
+        name: "show-header",
+        label: "Show in skill header",
+        hint: "",
+        default: true,
+        onChange: (newValue, oldValue) => {
+            if (newValue) {
+                document.getElementById("time-bank-display-panel").classList.remove("d-none");
+                document.getElementById("time-bank-display-panel").classList.add("d-inline-block");
+            } else {
+                document.getElementById("time-bank-display-panel").classList.remove("d-inline-block");
+                document.getElementById("time-bank-display-panel").classList.add("d-none");
+            }
+        },
+    });
+
+    settings.section("Where to show button").add({
         type: "switch",
         name: "show-mini-bar",
-        label: "show",
+        label: "Show in skill minibar",
         hint: "",
         default: true,
         onChange: (newValue, oldValue) => {
@@ -154,6 +227,22 @@ function createSettings() {
             }
         },
     });
+
+    settings.section("Where to show button").add({
+        type: "switch",
+        name: "show-sidebar",
+        label: "Show in sidebar",
+        hint: "",
+        default: true,
+        onChange: (newValue, oldValue) => {
+            if (newValue) {
+                sidebar.category("").item("timebank-sidebar", { rootClass: null})
+            } else {
+                sidebar.category("").item("timebank-sidebar", { rootClass: "d-none"})
+            }
+        },
+    });
+
 
     settings.section("Offline Time Multiplier").add({
         type: "number",
@@ -300,20 +389,25 @@ function simulateTime(hours) {
         displayTimeBankToast(`No active action, won't skip time while not training`, "danger");
         return;
     }
+
     // Compute if sufficient time is available
     let timeToSimulate = hours * msPerHour;
     let player_offline_time = getPlayerTime();
-    if (player_offline_time < timeToSimulate && DEBUG == false) {
-        displayTimeBankToast("Insufficient time available to skip that much time.", "danger");
+    if (player_offline_time <= 0) {
+        displayTimeBankToast("No banked time available.", "danger");
         return;
+    }
+
+    if (player_offline_time < timeToSimulate) {
+        timeToSimulate = player_offline_time;
+        hours = timeToSimulate / msPerHour; 
+        displayTimeBankToast(`Not enough time. Skipping ${formatTimeForDisplay(timeToSimulate)}.`, "info");
     }
     // Hide UI if it is visible
     if (swal.isVisible()) swal.close();
     document.getElementById("time-bank-menu").style.display = "none";
     // Preform time skip and subtract used time
     game.testForOffline(hours);
-    game.township.availableGameTicksToSpend += Math.floor((hours * 60) / (game.township.TICK_LENGTH / 60));
-    game.township.renderQueue.ticksAvailable = true;
     ctx.characterStorage.setItem("offline_time", Math.max(player_offline_time - timeToSimulate, 0));
     if (DEBUG) console.log(`Successfully spent ${timeToSimulate} time [${player_offline_time} -> ${getPlayerTime()}]`);
     // Update button text and minibar text to display new correct time
@@ -349,8 +443,12 @@ function interceptOfflineProgress() {
                 displayTimeBankToast(`Away for ${formatTimeForDisplay(offlineTimeBank)}, time recorded`, "success");
                 updateTimeDisplays();
             }
+
+            return new Promise((resolve)=>{
+                return resolve();
+            })
         } else {
-            originalMethod();
+            return originalMethod();
         }
     });
 
@@ -360,7 +458,7 @@ function interceptOfflineProgress() {
         return __awaiter(game, void 0, void 0, function* () {
             game.stopMainLoop();
             game.tickTimestamp -= hours * msPerHour;
-            saveData("all");
+            saveData();
             // Except that processOffline() is passed true.
             yield game.processOffline(true);
             game.startMainLoop();
