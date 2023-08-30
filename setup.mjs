@@ -1,5 +1,6 @@
 let ctx;
 let settings;
+let logo;
 const DEBUG = false;
 const hour = 1;
 const hourArray = [2, 4, 8, 16];
@@ -9,6 +10,7 @@ const msPerHour = 60 * 60 * 1000;
 
 export async function setup(gameContext) {
     ctx = gameContext;
+    logo = ctx.getResourceUrl('assets/OfflineTimeBankLogo.png')
 
     createSettings();
 
@@ -50,11 +52,10 @@ function updateTimeDisplays() {
     try {
         // These may not exist yet
         document.getElementById("time-bank-display-button").textContent = formattedTimeString;
-        document.getElementById("offlineTimeBankSmall2").innerText = "\nTime: " + formattedTimeString;
-        sidebar.category("").item("timebank-sidebar").subitem("time-banked", {
+        document.getElementById("time-bank-minibar").innerText = "\nTime: " + formattedTimeString;
+        sidebar.category("").item("time-bank-sidebar").subitem("time-banked", {
             aside: formattedTimeString
         })
-
     } catch {}
 }
 
@@ -62,14 +63,14 @@ function updateTimeDisplays() {
 function patchSidebar() {
     let showSidebar = settings.section("Where to show button").get("show-sidebar");
     
-    sidebar.category("").item("timebank-sidebar", { 
-        icon: `${CDNDIR}assets/media/skills/astrology/arachi.svg`,
+    sidebar.category("").item("time-bank-sidebar", { 
+        icon: logo,
         name: "Offline Time Bank",
         after: "melvorD:Bank",
         rootClass: showSidebar ? null : "d-none",
     })
 
-    sidebar.category("").item("timebank-sidebar").subitem("time-banked", {
+    sidebar.category("").item("time-bank-sidebar").subitem("time-banked", {
         name: "Banked",
         aside: formatTimeForDisplay(getPlayerTime())
     })
@@ -77,7 +78,7 @@ function patchSidebar() {
     let type = "m"
     for (let minutes of minuteArray) {
         let hours = minutes / 60
-        sidebar.category("").item("timebank-sidebar").subitem(`spend-${hours}`, {
+        sidebar.category("").item("time-bank-sidebar").subitem(`spend-${hours}`, {
             name: `Spend ${minutes} ${type === "h" ? "Hours" : "Minutes"}`,
             onClick: () => simulateTime(hours),
         })
@@ -85,7 +86,7 @@ function patchSidebar() {
 
     type = "h"
     for (let hours of hourArray) {
-        sidebar.category("").item("timebank-sidebar").subitem(`spend-${hours}`, {
+        sidebar.category("").item("time-bank-sidebar").subitem(`spend-${hours}`, {
             name: `Spend ${hours} ${type === "h" ? "Hours" : "Minutes"}`,
             onClick: () => simulateTime(hours),
         })
@@ -98,7 +99,7 @@ function patchSidebar() {
 function patchMinibar() {
     ctx.patch(Minibar, "initialize").after(() => {
         game.minibar.minibarElement.prepend(
-            game.minibar.createMinibarItem("minibar-TimeBank", `${CDNDIR}assets/media/skills/astrology/arachi.svg`, "", {
+            game.minibar.createMinibarItem("minibar-TimeBank", logo, "", {
                 onClick: () => document.getElementById("hover-TimeBank").classList.remove("d-none"),
             }).element
         );
@@ -127,7 +128,7 @@ function additionalMinibarPatches() {
     small.textContent = "Time Bank";
     small.style.fontWeight = "bold";
     const small2 = small.appendChild(document.createElement("small"));
-    small2.id = "offlineTimeBankSmall2";
+    small2.id = "time-bank-minibar";
     small2.innerText = "\nTime: " + formatTimeForDisplay(getPlayerTime());
     const buttonContainer = createTimeBankButtonArray();
     buttonContainer.style.gridTemplateColumns = "repeat(2,1fr)";
@@ -233,12 +234,12 @@ function createSettings() {
         name: "show-sidebar",
         label: "Show in sidebar",
         hint: "",
-        default: true,
+        default: false,
         onChange: (newValue, oldValue) => {
             if (newValue) {
-                sidebar.category("").item("timebank-sidebar", { rootClass: null})
+                sidebar.category("").item("time-bank-sidebar", { rootClass: null})
             } else {
-                sidebar.category("").item("timebank-sidebar", { rootClass: "d-none"})
+                sidebar.category("").item("time-bank-sidebar", { rootClass: "d-none"})
             }
         },
     });
@@ -248,7 +249,7 @@ function createSettings() {
         type: "number",
         name: "offline-time-multiplier",
         label: "Since time skipping is 100% efficient with next to nothing wasted, it may be more realistic to only get some fraction of offline time since it is now more valuable than normal.",
-        hint: "[10 - 0.1] (ex: 0.8 = 80%)",
+        hint: "[0.1 - 10] (ex: 0.8 = 80%)",
         default: 0.8,
         min: 0.1,
         max: 10,
@@ -273,7 +274,7 @@ function createSettings() {
         name: "max-offline-time",
         label: "Maximum number of offline hours that can accumulate. (Multiplier applied after max time is calculated)",
         hint: "[Base game is 24hrs, -1 = infinite]",
-        default: 24,
+        default: -1,
         min: -1,
     });
 
@@ -502,7 +503,7 @@ function displayTimeBankToast(message, badge = "info", duration = 5000) {
     */
     fireBottomToast(
         `<div class="text-center">
-            <img class="notification-img" src="https://cdn.melvor.net/core/v018/assets/media/skills/astrology/arachi.svg">
+            <img class="notification-img" src=${logo}>
             <span class="badge badge-${badge}">${message}</span>
         </div>`,
         duration
