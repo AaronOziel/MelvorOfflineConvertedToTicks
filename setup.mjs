@@ -56,14 +56,14 @@ function updateTimeDisplays() {
         sidebar.category("").item("time-bank-sidebar").subitem("time-banked", {
             aside: formattedTimeString
         })
-    } catch {}
+    } catch { }
 }
 
 
 function patchSidebar() {
     let showSidebar = settings.section("Where to show button").get("show-sidebar");
-    
-    sidebar.category("").item("time-bank-sidebar", { 
+
+    sidebar.category("").item("time-bank-sidebar", {
         icon: logo,
         name: "Offline Time Bank",
         after: "melvorD:Bank",
@@ -132,16 +132,30 @@ function additionalMinibarPatches() {
     small2.innerText = "\nTime: " + formatTimeForDisplay(getPlayerTime());
     const buttonContainer = createTimeBankButtonArray();
     buttonContainer.style.gridTemplateColumns = "repeat(2,1fr)";
-    
+
+    let hideTooltipId;
+    let mouseOver = () => {
+        if (hideTooltipId) {
+            clearInterval(hideTooltipId);
+            hideTooltipId = undefined;
+        }
+        hover_TimeBank.classList.remove("d-none")
+    };
+    let mouseLeave = () => {
+        if (hideTooltipId)
+            clearInterval(hideTooltipId);
+        hideTooltipId = setTimeout(() => hover_TimeBank.classList.add("d-none"), 50);
+    };
+
     const minibar_TimeBank = document.getElementById("minibar-TimeBank");
-    minibar_TimeBank.addEventListener("mouseover", () => hover_TimeBank.classList.remove("d-none"));
-    minibar_TimeBank.addEventListener("mouseleave", () => hover_TimeBank.classList.add("d-none"));
+    minibar_TimeBank.addEventListener("mouseover", mouseOver);
+    minibar_TimeBank.addEventListener("mouseleave", mouseLeave);
     if (settings.section("Where to show button").get("show-mini-bar") == false) {
         minibar_TimeBank.classList.add("d-none");
     }
 
-    hover_TimeBank.addEventListener("mouseover", () => hover_TimeBank.classList.remove("d-none"));
-    hover_TimeBank.addEventListener("mouseleave", () => hover_TimeBank.classList.add("d-none"));
+    hover_TimeBank.addEventListener("mouseover", mouseOver);
+    hover_TimeBank.addEventListener("mouseleave", mouseLeave);
     hover_TimeBank.appendChild(buttonContainer);
 }
 
@@ -196,7 +210,7 @@ function createTimeBankButtonArray() {
 function createSettings() {
     settings = ctx.settings;
 
-    
+
     settings.section("Where to show button").add({
         type: "switch",
         name: "show-header",
@@ -237,9 +251,9 @@ function createSettings() {
         default: false,
         onChange: (newValue, oldValue) => {
             if (newValue) {
-                sidebar.category("").item("time-bank-sidebar", { rootClass: null})
+                sidebar.category("").item("time-bank-sidebar", { rootClass: null })
             } else {
-                sidebar.category("").item("time-bank-sidebar", { rootClass: "d-none"})
+                sidebar.category("").item("time-bank-sidebar", { rootClass: "d-none" })
             }
         },
     });
@@ -401,7 +415,7 @@ function simulateTime(hours) {
 
     if (player_offline_time < timeToSimulate) {
         timeToSimulate = player_offline_time;
-        hours = timeToSimulate / msPerHour; 
+        hours = timeToSimulate / msPerHour;
         displayTimeBankToast(`Not enough time. Skipping ${formatTimeForDisplay(timeToSimulate)}.`, "info");
     }
     // Hide UI if it is visible
@@ -445,7 +459,7 @@ function interceptOfflineProgress() {
                 updateTimeDisplays();
             }
 
-            return new Promise((resolve)=>{
+            return new Promise((resolve) => {
                 return resolve();
             })
         } else {
