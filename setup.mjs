@@ -28,6 +28,10 @@ export async function setup(gameContext) {
         additionalMinibarPatches();
         patchSidebar();
     });
+
+    ctx.api({
+        simulateTime: hours => simulateTime(hours)
+    });
 }
 
 // CREATE UI ELEMENTS
