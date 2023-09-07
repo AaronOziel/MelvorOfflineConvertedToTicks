@@ -62,7 +62,7 @@ function updateTimeDisplays() {
         sidebar.category("").item("time-bank-sidebar").subitem("time-banked", {
             aside: formattedTimeString,
         });
-    } catch {}
+    } catch { }
 }
 
 function patchSidebar() {
@@ -88,12 +88,7 @@ function patchSidebar() {
         let hours = minutes / 60;
         let onClickFunc = () => simulateTime(hours);
         if (minutes === "X") {
-            onClickFunc = () => {
-                var time = parseInt(prompt("Please input how much time to use"), 0);
-                if (!isNaN(time) && time > 0) {
-                    simulateTime(time * minute);
-                }
-            };
+            onClickFunc = () => onClickSpendX("m");
         }
         sidebar
             .category("")
@@ -108,12 +103,7 @@ function patchSidebar() {
     for (let hours of hourArray) {
         let onClickFunc = () => simulateTime(hours);
         if (hours === "X") {
-            onClickFunc = () => {
-                var time = parseInt(prompt("Please input how much time to use"), 0);
-                if (!isNaN(time) && time > 0) {
-                    simulateTime(time);
-                }
-            };
+            onClickFunc = () => onClickSpendX("h");
         }
         sidebar
             .category("")
@@ -226,16 +216,7 @@ function createTimeBankButtonArray() {
             const minOrHour = type === "m" ? minute : hour;
             // If this is the "Spend X time" button
             if (time === "X") {
-                button.addEventListener("click", () => {
-                    var time = parseInt(prompt("Please input how much time to use"), 0);
-                    if (!isNaN(time) && time > 0) {
-                        if (type === "m") {
-                            simulateTime(time * minute);
-                        } else if (type === "h") {
-                            simulateTime(time);
-                        }
-                    }
-                });
+                button.addEventListener("click", () => onClickSpendX(type));
             } else {
                 // This is a normal numbered button
                 button.addEventListener("click", () => {
@@ -355,6 +336,21 @@ function createSettings() {
         numberName: numberName,
         sliderName: sliderName,
     });
+
+    settings.section("Xm/Xh Defaults").add([{
+        type: "number",
+        name: "x-m-default",
+        label: "Xm default value",
+        hint: "Xm button will use this value instead of prompting. Leave blank to prompt",
+        min: 1
+    }, {
+        type: "number",
+        name: "x-h-default",
+        label: "Xh default value",
+        hint: "Xh button will use this value instead of prompting. Leave blank to prompt",
+        min: 1
+    }]);
+
     console.log("Settings Created");
 }
 
@@ -440,7 +436,9 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
 // FUNCTIONALITY
 
 function onClickSpendX(type) {
-    var time = parseInt(prompt("Please input how much time to use"), 0);
+    var time = settings.section("Xm/Xh Defaults").get("x-" + type + "-default");
+    if (isNaN(time) || time <= 0)
+        time = parseFloat(prompt("Please input how much time to use"), 0);
     if (!isNaN(time) && time > 0) {
         if (type === "m") {
             simulateTime(time * minute);
