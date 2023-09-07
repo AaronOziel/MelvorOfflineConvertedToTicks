@@ -3,9 +3,9 @@ let settings;
 let logo;
 const DEBUG = false;
 const hour = 1;
-const hourArray = [1, 4, 8, 'X'];
+const hourArray = [1, 4, 8, "X"];
 const minute = hour / 60;
-const minuteArray = [5, 15, 30, 'X'];
+const minuteArray = [5, 15, 30, "X"];
 const msPerHour = 60 * 60 * 1000;
 
 export async function setup(gameContext) {
@@ -86,23 +86,41 @@ function patchSidebar() {
     let type = "m";
     for (let minutes of minuteArray) {
         let hours = minutes / 60;
+        let onClickFunc = () => simulateTime(hours);
+        if (minutes === "X") {
+            onClickFunc = () => {
+                var time = parseInt(prompt("Please input how much time to use"), 0);
+                if (!isNaN(time) && time > 0) {
+                    simulateTime(time * minute);
+                }
+            };
+        }
         sidebar
             .category("")
             .item("time-bank-sidebar")
             .subitem(`spend-${hours}`, {
                 name: `Spend ${minutes} ${type === "h" ? "Hours" : "Minutes"}`,
-                onClick: () => simulateTime(hours),
+                onClick: onClickFunc,
             });
     }
 
     type = "h";
     for (let hours of hourArray) {
+        let onClickFunc = () => simulateTime(hours);
+        if (hours === "X") {
+            onClickFunc = () => {
+                var time = parseInt(prompt("Please input how much time to use"), 0);
+                if (!isNaN(time) && time > 0) {
+                    simulateTime(time);
+                }
+            };
+        }
         sidebar
             .category("")
             .item("time-bank-sidebar")
             .subitem(`spend-${hours}`, {
                 name: `Spend ${hours} ${type === "h" ? "Hours" : "Minutes"}`,
-                onClick: () => simulateTime(hours),
+                onClick: onClickFunc,
             });
     }
 }
@@ -218,7 +236,8 @@ function createTimeBankButtonArray() {
                         }
                     }
                 });
-            } else { // This is a normal numbered button
+            } else {
+                // This is a normal numbered button
                 button.addEventListener("click", () => {
                     simulateTime(time * minOrHour);
                 });
@@ -419,6 +438,17 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
 }
 
 // FUNCTIONALITY
+
+function onClickSpendX(type) {
+    var time = parseInt(prompt("Please input how much time to use"), 0);
+    if (!isNaN(time) && time > 0) {
+        if (type === "m") {
+            simulateTime(time * minute);
+        } else if (type === "h") {
+            simulateTime(time);
+        }
+    }
+}
 
 function simulateTime(hours) {
     // Stop a time skip if no action is in progress
