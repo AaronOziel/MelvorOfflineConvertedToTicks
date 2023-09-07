@@ -3,9 +3,9 @@ let settings;
 let logo;
 const DEBUG = false;
 const hour = 1;
-const hourArray = [2, 4, 8, 16];
+const hourArray = [1, 4, 8, 'X'];
 const minute = hour / 60;
-const minuteArray = [5, 15, 30, 60];
+const minuteArray = [5, 15, 30, 'X'];
 const msPerHour = 60 * 60 * 1000;
 
 export async function setup(gameContext) {
@@ -206,9 +206,23 @@ function createTimeBankButtonArray() {
             button.style.margin = "5px";
             button.style.justifyContent = "center";
             const minOrHour = type === "m" ? minute : hour;
-            button.addEventListener("click", () => {
-                simulateTime(time * minOrHour);
-            });
+            // If this is the "Spend X time" button
+            if (time === "X") {
+                button.addEventListener("click", () => {
+                    var time = parseInt(prompt("Please input how much time to use"), 0);
+                    if (!isNaN(time) && time > 0) {
+                        if (type === "m") {
+                            simulateTime(time * minute);
+                        } else if (type === "h") {
+                            simulateTime(time);
+                        }
+                    }
+                });
+            } else { // This is a normal numbered button
+                button.addEventListener("click", () => {
+                    simulateTime(time * minOrHour);
+                });
+            }
             buttonContainer.appendChild(button);
         }
     }
