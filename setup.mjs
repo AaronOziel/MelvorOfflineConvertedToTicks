@@ -30,7 +30,7 @@ export async function setup(gameContext) {
 
         ctx.api({
             simulateTime: (hours) => simulateTime(hours),
-            addTimeInTicks: (ticks) => depositTimeInMs(ticks),
+            addTimeInTicks: (ms) => depositTimeInMs(ms),
             addTimeInHours: (hours) => depositTimeInHours(hours),
         });
     });
@@ -62,7 +62,7 @@ function updateTimeDisplays() {
         sidebar.category("").item("time-bank-sidebar").subitem("time-banked", {
             aside: formattedTimeString,
         });
-    } catch { }
+    } catch {}
 }
 
 function patchSidebar() {
@@ -130,7 +130,7 @@ function additionalHeaderPatches() {
     if (settings.section("Where to show button").get("show-header") == false) {
         header_TimeBank.classList.remove("d-inline-block");
         header_TimeBank.classList.add("d-none");
-    } 
+    }
 }
 
 function additionalMinibarPatches() {
@@ -337,19 +337,22 @@ function createSettings() {
         sliderName: sliderName,
     });
 
-    settings.section("Xm/Xh Defaults").add([{
-        type: "number",
-        name: "x-m-default",
-        label: "Xm default value",
-        hint: "Xm button will use this value instead of prompting. Leave blank to prompt",
-        min: 1
-    }, {
-        type: "number",
-        name: "x-h-default",
-        label: "Xh default value",
-        hint: "Xh button will use this value instead of prompting. Leave blank to prompt",
-        min: 1
-    }]);
+    settings.section("Xm/Xh Defaults").add([
+        {
+            type: "number",
+            name: "x-m-default",
+            label: "Xm default value",
+            hint: "Xm button will use this value instead of prompting. Leave blank to prompt",
+            min: 1,
+        },
+        {
+            type: "number",
+            name: "x-h-default",
+            label: "Xh default value",
+            hint: "Xh button will use this value instead of prompting. Leave blank to prompt",
+            min: 1,
+        },
+    ]);
 
     console.log("Settings Created");
 }
@@ -437,8 +440,7 @@ function renderOfflineRatioSettingsSlider(name, onChange, config) {
 
 function onClickSpendX(type) {
     var time = settings.section("Xm/Xh Defaults").get("x-" + type + "-default");
-    if (isNaN(time) || time <= 0)
-        time = parseFloat(prompt("Please input how much time to use"), 0);
+    if (isNaN(time) || time <= 0) time = parseFloat(prompt("Please input how much time to use"), 0);
     if (!isNaN(time) && time > 0) {
         if (type === "m") {
             simulateTime(time * minute);
@@ -455,7 +457,7 @@ function simulateTime(hours) {
         return;
     }
     // Validate that hours is a positive number
-    if(isNaN(hours) | hours <= 0) {
+    if (isNaN(hours) | (hours <= 0)) {
         displayTimeBankToast(`Cannot spend time: "${hours}", time must be a positive number`, "danger");
         return;
     }
@@ -535,8 +537,8 @@ function interceptOfflineProgress() {
 }
 
 function depositTimeInMs(ms) {
-    if (isNaN(ms)){
-        return `cannot deposit time, "${ms}" is not a number`
+    if (isNaN(ms)) {
+        return `cannot deposit time, "${ms}" is not a number`;
     }
     // Math.max so time can't go negative since negative inputs are allowed
     ctx.characterStorage.setItem("offline_time", Math.max(getPlayerTime() + ms, 0));
