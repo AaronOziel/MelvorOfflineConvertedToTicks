@@ -140,7 +140,7 @@ function additionalHeaderPatches() {
     if (settings.section("Where to show button").get("show-header") == false) {
         header_TimeBank.classList.remove("d-inline-block");
         header_TimeBank.classList.add("d-none");
-    }
+    } 
 }
 
 function additionalMinibarPatches() {
@@ -456,7 +456,11 @@ function simulateTime(hours) {
         displayTimeBankToast(`No active action, won't skip time while not training`, "danger");
         return;
     }
-
+    // Validate that hours is a positive number
+    if(isNaN(hours) | hours <= 0) {
+        displayTimeBankToast(`Cannot spend time: "${hours}", time must be a positive number`, "danger");
+        return;
+    }
     // Compute if sufficient time is available
     let timeToSimulate = hours * msPerHour;
     let player_offline_time = getPlayerTime();
@@ -464,7 +468,6 @@ function simulateTime(hours) {
         displayTimeBankToast("No banked time available.", "danger");
         return;
     }
-
     if (player_offline_time < timeToSimulate) {
         timeToSimulate = player_offline_time;
         hours = timeToSimulate / msPerHour;
@@ -534,6 +537,9 @@ function interceptOfflineProgress() {
 }
 
 function depositTimeInMs(ms) {
+    if (isNaN(ms)){
+        return `cannot deposit time, "${ms}" is not a number`
+    }
     // Math.max so time can't go negative since negative inputs are allowed
     ctx.characterStorage.setItem("offline_time", Math.max(getPlayerTime() + ms, 0));
     updateTimeDisplays();
