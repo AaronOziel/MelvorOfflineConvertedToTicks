@@ -354,6 +354,16 @@ function createSettings() {
         },
     ]);
 
+    settings.section("Uncap Offline Time Spent").add([
+        {
+            type: "switch",
+            name: "uncap-offline",
+            label: "Uncap Offline Time Spent",
+            hint: "Vanilla max offline time is 24hrs. Only use this if you are sure you can afk for more than 24hrs (such as having the mod 'Unlimited Offline' installed)",
+            default: false,
+        }
+    ]);
+
     console.log("Settings Created");
 }
 
@@ -469,9 +479,16 @@ function simulateTime(hours) {
         return;
     }
     if (player_offline_time < timeToSimulate) {
+        // Not Enough Time
         timeToSimulate = player_offline_time;
         hours = timeToSimulate / msPerHour;
         displayTimeBankToast(`Not enough time. Skipping ${formatTimeForDisplay(timeToSimulate)}.`, "info");
+    }
+    if (hours > 24 & settings.section("Uncap Offline Time Spent").get("uncap-offline") == false) {
+        // Too much time, vanilla cannot simulate more than 24hrs at a time
+        hours = 24;
+        timeToSimulate = hours * msPerHour;
+        displayTimeBankToast(`Time spent has been capped. Too much time to simulate. Skipping ${formatTimeForDisplay(timeToSimulate)}.`, "info");
     }
     // Hide UI if it is visible
     if (swal.isVisible()) swal.close();
