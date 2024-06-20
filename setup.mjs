@@ -502,10 +502,10 @@ function simulateTime(hours) {
 }
 
 function interceptOfflineProgress() {
-    ctx.patch(Game, "processOffline").replace((originalMethod, isModCall) => {
+    ctx.patch(Game, "enterOfflineLoop").replace((originalMethod, loopTime, isModCall) => {
         if (!isModCall) {
             // Intercept offline time
-            let newTime = Date.now() - game.tickTimestamp;
+            let newTime = loopTime - game.tickTimestamp;
             if (settings.section("Maximum Offline Time").get("max-offline-time") > 0) {
                 // cap offline time if set
                 newTime = Math.min(newTime, settings.section("Maximum Offline Time").get("max-offline-time") * msPerHour);
@@ -517,11 +517,12 @@ function interceptOfflineProgress() {
             let timeRatio = parseInt(settings.section("Offline Time Ratio").get("offlineTimeRatioSlider")) / 100;
             let offlineTimeBank = newTime * timeRatio;
             let baseOfflineTime = newTime - offlineTimeBank;
-            // Reset 'last seen' to now
-            // TODO: Not sure if even needed...
+
+            // Reset the last tick to now so that Melvor doesn't think we were offline.
             game.tickTimestamp = Date.now();
             // Bank all time
             depositTimeInMs(newTime);
+
             // Then spend some of it as normal if Offline Time Ratio > 1
             if (baseOfflineTime > TICK_INTERVAL) {
                 simulateTime(baseOfflineTime / msPerHour);
@@ -535,19 +536,29 @@ function interceptOfflineProgress() {
                 return resolve();
             });
         } else {
-            return originalMethod();
+            return originalMethod(loopTime);
         }
     });
 
     // Help processOffline differentiate between time skip call and offline progress call.
-    ctx.patch(Game, "testForOffline").replace((originalMethod, hours) => {
+    ctx.patch(Game, "testForOffline").replace((originalMethod, timeToGoBack) => {
         // Everything from the original testForOffline().
         return __awaiter(game, void 0, void 0, function* () {
             game.stopMainLoop();
-            game.tickTimestamp -= hours * msPerHour;
+            game.tickTimestamp -= timeToGoBack * msPerHour;
+            game.skills.forEach((skill)=>
+                {
+                    skill.timeToLevelTracker.clear();
+                    skill.timeToLevelTicks = 0;
+                    skill.timeToLevelPercentStart = skill.nextAbyssalLevelProgress;
+                }
+            );
             saveData();
-            // Except that processOffline() is passed true.
-            yield game.processOffline(true);
+
+            // Trigger the game to enter an offline loop on its own so that we don't need to do additional logic.
+            yield game.enterOfflineLoop(Date.now(), true);
+
+            // Allow the game to re-enter its normal loop state, which now includes processing offline time
             game.startMainLoop();
         });
     });
