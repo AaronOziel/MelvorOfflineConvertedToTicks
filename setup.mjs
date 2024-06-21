@@ -506,6 +506,12 @@ function interceptOfflineProgress() {
         if (!isModCall) {
             // Intercept offline time
             let newTime = loopTime - game.tickTimestamp;
+
+            // If enough time has not passed its likely the game itself is trying to force an offline process, let that happen since there is no tangable time to "bank"
+            if (newTime < game.MIN_OFFLINE_TIME) {
+                return originalMethod(loopTime);
+            }
+            
             if (settings.section("Maximum Offline Time").get("max-offline-time") > 0) {
                 // cap offline time if set
                 newTime = Math.min(newTime, settings.section("Maximum Offline Time").get("max-offline-time") * msPerHour);
