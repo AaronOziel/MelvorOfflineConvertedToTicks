@@ -526,6 +526,8 @@ function interceptOfflineProgress() {
 
             // Reset the last tick to now so that Melvor doesn't think we were offline.
             game.tickTimestamp = Date.now();
+            // Let the game know we processed the offline loop for it.
+            game._forceOfflineLoop = false;
             // Bank all time
             depositTimeInMs(newTime);
 
